@@ -1,0 +1,54 @@
+# Unity generated folders
+[.]agents/
+[.]codex/
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# Visual Studio / Rider
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+
+# Unity crash and memory captures
+sysinfo.txt
+*.stackdump
+*.dmp
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Asset store tools
+[Aa]ssets/AssetStoreTools*
+[Aa]ssets/Screenshots/
+
+# Local source downloads and Blender backup files
+素材/
+*.blend1
+*.blend2
+
+# Keep only the local UnitySkills package referenced by Packages/manifest.json.
+Unity-Skills-main/*
+!Unity-Skills-main/SkillsForUnity/
+!Unity-Skills-main/SkillsForUnity/**
+
+# Keep Unity metadata
+!*.meta
+
+# Local validation screenshots are not project source.
+[Aa]ssets/Screenshots.meta

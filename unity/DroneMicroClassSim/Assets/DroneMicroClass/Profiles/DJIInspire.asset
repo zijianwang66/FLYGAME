@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de911448f9eb3044aa91d6316ed4749c, type: 3}
+  m_Name: DJIInspire
+  m_EditorClassIdentifier: Assembly-CSharp::DroneMicroClass.DroneProfile
+  displayName: DJI Inspire Payload
+  modelCode: CARGO
+  handlingNotes: 'Payload tune for the larger Inspire body: higher mass and damping,
+    reduced tilt and angular limits, and stronger altitude hold for smooth heavy-lift
+    practice.'
+  mass: 3.65
+  linearDamping: 0.95
+  angularDamping: 4.5
+  maxLiftForce: 68
+  pitchTorque: 2.05
+  rollTorque: 2.05
+  yawTorque: 0.72
+  maxTiltAngle: 12
+  throttleResponse: 0.3
+  angularRateDamping: 0.55
+  hoverBrakeAcceleration: 4.8
+  maxHoverBrakeForce: 34
+  cyclicSensitivity: 0.72
+  yawSensitivity: 0.66
+  verticalSensitivity: 0.72
+  inputResponseSpeed: 4.2
+  attitudeTorqueScale: 0.82
+  activeInputBrakeScale: 0.42
+  maxAngularVelocity: 3.8
+  altitudeChangeSpeed: 1.1
+  altitudePid:
+    proportional: 14.5
+    integral: 0.55
+    derivative: 9.5
+    outputLimit: 32
+  pitchPid:
+    proportional: 0.105
+    integral: 0
+    derivative: 0.09
+    outputLimit: 2.1
+  rollPid:
+    proportional: 0.105
+    integral: 0
+    derivative: 0.09
+    outputLimit: 2.1
+  rotorVisualSpeed: 7600
+  rotorVisualAxis: {x: 0, y: 0, z: 1}
+  rotorGroundSpinRatio: 0.34
+  rotorFlightSpinRatio: 0.82
+  rotorGroundSpinupSpeed: 2
+  rotorFlightSpinupSpeed: 10
+  rotorStrobeSampleCount: 6
+  rotorStrobeStartRatio: 0.66
+  rotorStrobeWobbleDegrees: 4

@@ -1,0 +1,461 @@
+{
+  "plants": {
+    "asset": "plants",
+    "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\素材\\shapespark-low-poly-plants-kit.fbx",
+    "importError": null,
+    "meshObjectCount": 30,
+    "totalVertices": 7395,
+    "totalPolygons": 4027,
+    "totalTriangles": 7665,
+    "bounds": {
+      "min": [
+        0.7386808395385742,
+        -24.501293182373047,
+        -0.36211732029914856
+      ],
+      "max": [
+        26.3866024017334,
+        0.47899413108825684,
+        8.778138160705566
+      ],
+      "size": [
+        25.647921562194824,
+        24.980287313461304,
+        9.140255481004715
+      ]
+    },
+    "lowestTriangleObjects": [
+      {
+        "name": "Clover-02",
+        "vertices": 5,
+        "polygons": 4,
+        "triangles": 4,
+        "materials": [
+          "clover-02"
+        ]
+      },
+      {
+        "name": "Clover-04",
+        "vertices": 5,
+        "polygons": 4,
+        "triangles": 4,
+        "materials": [
+          "clover-04"
+        ]
+      },
+      {
+        "name": "Clover-05",
+        "vertices": 5,
+        "polygons": 4,
+        "triangles": 4,
+        "materials": [
+          "clover-05"
+        ]
+      },
+      {
+        "name": "Clover-01",
+        "vertices": 6,
+        "polygons": 4,
+        "triangles": 5,
+        "materials": [
+          "clover-01"
+        ]
+      },
+      {
+        "name": "Clover-03",
+        "vertices": 6,
+        "polygons": 4,
+        "triangles": 5,
+        "materials": [
+          "clover-03"
+        ]
+      },
+      {
+        "name": "Grass-01",
+        "vertices": 20,
+        "polygons": 5,
+        "triangles": 10,
+        "materials": [
+          "high-grass-1-02",
+          "high-grass-1-01"
+        ]
+      },
+      {
+        "name": "Grass-02",
+        "vertices": 20,
+        "polygons": 5,
+        "triangles": 10,
+        "materials": [
+          "high-grass-1-02",
+          "high-grass-1-01"
+        ]
+      },
+      {
+        "name": "Grass-03",
+        "vertices": 20,
+        "polygons": 5,
+        "triangles": 10,
+        "materials": [
+          "high-grass-1-02",
+          "high-grass-1-01"
+        ]
+      },
+      {
+        "name": "Flowers-01",
+        "vertices": 12,
+        "polygons": 9,
+        "triangles": 14,
+        "materials": [
+          "flowers-01.001"
+        ]
+      },
+      {
+        "name": "Flowers-03",
+        "vertices": 14,
+        "polygons": 9,
+        "triangles": 16,
+        "materials": [
+          "flowers-01.002"
+        ]
+      },
+      {
+        "name": "Bush-03",
+        "vertices": 86,
+        "polygons": 27,
+        "triangles": 54,
+        "materials": [
+          "shrubbery-2-01",
+          "shrubbery-2-02"
+        ]
+      },
+      {
+        "name": "Bush-04",
+        "vertices": 86,
+        "polygons": 27,
+        "triangles": 54,
+        "materials": [
+          "shrubbery-1-01",
+          "shrubbery-1-02"
+        ]
+      },
+      {
+        "name": "Flowers-02",
+        "vertices": 118,
+        "polygons": 45,
+        "triangles": 90,
+        "materials": [
+          "shrubbery-1-01",
+          "shrubbery-1-02",
+          "flowers-01.001",
+          "flowers-01.002"
+        ]
+      },
+      {
+        "name": "Flowers-04",
+        "vertices": 118,
+        "polygons": 45,
+        "triangles": 90,
+        "materials": [
+          "shrubbery-1-01",
+          "shrubbery-1-02",
+          "flowers-01.001",
+          "flowers-01.002"
+        ]
+      },
+      {
+        "name": "Bush-01",
+        "vertices": 144,
+        "polygons": 64,
+        "triangles": 128,
+        "materials": [
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Bush-02",
+        "vertices": 153,
+        "polygons": 68,
+        "triangles": 136,
+        "materials": [
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Hedge-01",
+        "vertices": 303,
+        "polygons": 160,
+        "triangles": 244,
+        "materials": [
+          "hedge-01",
+          "hedge-02"
+        ]
+      },
+      {
+        "name": "Tree-01-4",
+        "vertices": 342,
+        "polygons": 191,
+        "triangles": 368,
+        "materials": [
+          "trunk-01",
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Tree-02-4",
+        "vertices": 352,
+        "polygons": 195,
+        "triangles": 376,
+        "materials": [
+          "trunk-01",
+          "branch-2-01",
+          "branch-2-02"
+        ]
+      },
+      {
+        "name": "Tree-03-4",
+        "vertices": 352,
+        "polygons": 195,
+        "triangles": 376,
+        "materials": [
+          "trunk-01",
+          "branch-01",
+          "branch-02"
+        ]
+      }
+    ],
+    "highestTriangleObjects": [
+      {
+        "name": "Bush-03",
+        "vertices": 86,
+        "polygons": 27,
+        "triangles": 54,
+        "materials": [
+          "shrubbery-2-01",
+          "shrubbery-2-02"
+        ]
+      },
+      {
+        "name": "Bush-04",
+        "vertices": 86,
+        "polygons": 27,
+        "triangles": 54,
+        "materials": [
+          "shrubbery-1-01",
+          "shrubbery-1-02"
+        ]
+      },
+      {
+        "name": "Flowers-02",
+        "vertices": 118,
+        "polygons": 45,
+        "triangles": 90,
+        "materials": [
+          "shrubbery-1-01",
+          "shrubbery-1-02",
+          "flowers-01.001",
+          "flowers-01.002"
+        ]
+      },
+      {
+        "name": "Flowers-04",
+        "vertices": 118,
+        "polygons": 45,
+        "triangles": 90,
+        "materials": [
+          "shrubbery-1-01",
+          "shrubbery-1-02",
+          "flowers-01.001",
+          "flowers-01.002"
+        ]
+      },
+      {
+        "name": "Bush-01",
+        "vertices": 144,
+        "polygons": 64,
+        "triangles": 128,
+        "materials": [
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Bush-02",
+        "vertices": 153,
+        "polygons": 68,
+        "triangles": 136,
+        "materials": [
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Hedge-01",
+        "vertices": 303,
+        "polygons": 160,
+        "triangles": 244,
+        "materials": [
+          "hedge-01",
+          "hedge-02"
+        ]
+      },
+      {
+        "name": "Tree-01-4",
+        "vertices": 342,
+        "polygons": 191,
+        "triangles": 368,
+        "materials": [
+          "trunk-01",
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Tree-02-4",
+        "vertices": 352,
+        "polygons": 195,
+        "triangles": 376,
+        "materials": [
+          "trunk-01",
+          "branch-2-01",
+          "branch-2-02"
+        ]
+      },
+      {
+        "name": "Tree-03-4",
+        "vertices": 352,
+        "polygons": 195,
+        "triangles": 376,
+        "materials": [
+          "trunk-01",
+          "branch-01",
+          "branch-02"
+        ]
+      },
+      {
+        "name": "Tree-01-3",
+        "vertices": 384,
+        "polygons": 213,
+        "triangles": 412,
+        "materials": [
+          "trunk-01",
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Tree-02-3",
+        "vertices": 384,
+        "polygons": 213,
+        "triangles": 412,
+        "materials": [
+          "trunk-01",
+          "branch-2-01",
+          "branch-2-02"
+        ]
+      },
+      {
+        "name": "Tree-03-3",
+        "vertices": 384,
+        "polygons": 213,
+        "triangles": 412,
+        "materials": [
+          "trunk-01",
+          "branch-01",
+          "branch-02"
+        ]
+      },
+      {
+        "name": "Bush-05",
+        "vertices": 518,
+        "polygons": 290,
+        "triangles": 555,
+        "materials": [
+          "trunk-01",
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Tree-01-1",
+        "vertices": 593,
+        "polygons": 338,
+        "triangles": 646,
+        "materials": [
+          "trunk-01",
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Tree-01-2",
+        "vertices": 593,
+        "polygons": 338,
+        "triangles": 646,
+        "materials": [
+          "trunk-01",
+          "branch-1-01",
+          "branch-1-02"
+        ]
+      },
+      {
+        "name": "Tree-02-1",
+        "vertices": 593,
+        "polygons": 338,
+        "triangles": 646,
+        "materials": [
+          "trunk-01",
+          "branch-2-01",
+          "branch-2-02"
+        ]
+      },
+      {
+        "name": "Tree-02-2",
+        "vertices": 593,
+        "polygons": 338,
+        "triangles": 646,
+        "materials": [
+          "trunk-01",
+          "branch-2-01",
+          "branch-2-02"
+        ]
+      },
+      {
+        "name": "Tree-03-1",
+        "vertices": 593,
+        "polygons": 338,
+        "triangles": 646,
+        "materials": [
+          "trunk-01",
+          "branch-01",
+          "branch-02"
+        ]
+      },
+      {
+        "name": "Tree-03-2",
+        "vertices": 593,
+        "polygons": 338,
+        "triangles": 646,
+        "materials": [
+          "trunk-01",
+          "branch-01",
+          "branch-02"
+        ]
+      }
+    ]
+  },
+  "dji_drone": {
+    "asset": "dji_drone",
+    "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\素材\\dji无人机.fbx",
+    "importError": "错误: Python: Traceback (most recent call last):\n  File \"K:\\Blender\\4.3\\scripts\\addons_core\\io_scene_fbx\\__init__.py\", line 221, in execute\n    return import_fbx.load(self, context, filepath=self.filepath, **keywords)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"K:\\Blender\\4.3\\scripts\\addons_core\\io_scene_fbx\\import_fbx.py\", line 3343, in load\n    _()\n  File \"K:\\Blender\\4.3\\scripts\\addons_core\\io_scene_fbx\\import_fbx.py\", line 3342, in _\n    fbx_item[1] = blen_read_light(fbx_tmpl, fbx_obj, settings)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"K:\\Blender\\4.3\\scripts\\addons_core\\io_scene_fbx\\import_fbx.py\", line 2237, in blen_read_light\n    lamp.shadow_color = elem_props_get_color_rgb(fbx_props, b'ShadowColor', (0.0, 0.0, 0.0))\n    ^^^^^^^^^^^^^^^^^\nAttributeError: 'SunLight' object has no attribute 'shadow_color'\n位置: K:\\Blender\\4.3\\scripts\\modules\\bpy\\ops.py:109\n",
+    "meshObjectCount": 0,
+    "totalVertices": 0,
+    "totalPolygons": 0,
+    "totalTriangles": 0,
+    "bounds": null,
+    "lowestTriangleObjects": [],
+    "highestTriangleObjects": []
+  }
+}

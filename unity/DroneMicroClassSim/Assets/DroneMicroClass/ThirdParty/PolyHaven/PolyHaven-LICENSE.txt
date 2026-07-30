@@ -1,0 +1,5 @@
+﻿Poly Haven assets are released under Creative Commons CC0.
+Imported HDRI:
+- kloofendal_48d_partly_cloudy_puresky_1k.hdr
+Source: https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky
+License: https://polyhaven.com/license

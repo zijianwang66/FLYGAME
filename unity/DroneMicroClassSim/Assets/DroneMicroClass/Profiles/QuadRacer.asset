@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de911448f9eb3044aa91d6316ed4749c, type: 3}
+  m_Name: QuadRacer
+  m_EditorClassIdentifier: Assembly-CSharp::DroneMicroClass.DroneProfile
+  displayName: DJI Training Balanced
+  modelCode: DJI-BAL
+  handlingNotes: 'Balanced DJI host aircraft: neutral classroom handling, solid altitude
+    hold, and enough response for normal maneuver training without racing drift.'
+  mass: 1.55
+  linearDamping: 0.45
+  angularDamping: 2
+  maxLiftForce: 39
+  pitchTorque: 3.8
+  rollTorque: 3.8
+  yawTorque: 1.5
+  maxTiltAngle: 20
+  throttleResponse: 0.7
+  angularRateDamping: 0.38
+  hoverBrakeAcceleration: 3
+  maxHoverBrakeForce: 13
+  cyclicSensitivity: 1.02
+  yawSensitivity: 0.96
+  verticalSensitivity: 1
+  inputResponseSpeed: 8
+  attitudeTorqueScale: 1.08
+  activeInputBrakeScale: 0.16
+  maxAngularVelocity: 7.2
+  altitudeChangeSpeed: 2.35
+  altitudePid:
+    proportional: 9.2
+    integral: 0.26
+    derivative: 5.3
+    outputLimit: 24
+  pitchPid:
+    proportional: 0.205
+    integral: 0
+    derivative: 0.044
+    outputLimit: 4.3
+  rollPid:
+    proportional: 0.205
+    integral: 0
+    derivative: 0.044
+    outputLimit: 4.3
+  rotorVisualSpeed: 8800
+  rotorVisualAxis: {x: 0, y: 1, z: 0}
+  rotorGroundSpinRatio: 0.32
+  rotorFlightSpinRatio: 0.84
+  rotorGroundSpinupSpeed: 2.4
+  rotorFlightSpinupSpeed: 12
+  rotorStrobeSampleCount: 6
+  rotorStrobeStartRatio: 0.68
+  rotorStrobeWobbleDegrees: 4
