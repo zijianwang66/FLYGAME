@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>无人机飞行仿真训练平台 - 主控台</title>
+  <link rel="stylesheet" href="css/main02.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/js/vendor/three/build/three.module.js",
+        "three/addons/": "/js/vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main class="control-shell" data-mode="mission">
+    <div class="screen-backdrop" aria-hidden="true"></div>
+
+    <header class="status-bar">
+      <section class="brand-block" aria-label="系统信息">
+        <div class="logo-frame">
+          <img src="logo.jpg" alt="公司 Logo">
+        </div>
+        <div>
+          <strong>UAV SIMULATION SYSTEM</strong>
+          <span>无人机飞行仿真训练平台</span>
+        </div>
+      </section>
+
+      <section class="system-state" aria-label="设备状态">
+        <span><i></i>SYSTEM ONLINE</span>
+        <span>DEVICE 01 CONNECTED</span>
+        <span>LATENCY 12 MS</span>
+        <time id="systemTime">2026.07.29 00:00:00</time>
+      </section>
+
+      <section class="operator-block" aria-label="操作员">
+        <span>OPERATOR</span>
+        <strong>WANG ZIJIAN</strong>
+        <button type="button">设置</button>
+      </section>
+    </header>
+
+    <section class="selection-screen" aria-label="训练选择屏幕">
+      <header class="screen-title">
+        <span>MISSION DEPLOYMENT TERMINAL</span>
+        <h1>训练任务部署</h1>
+        <p>选择训练模式、无人机型号与场景后进入仿真。</p>
+      </header>
+
+      <nav class="mode-panel" aria-label="训练模式">
+        <button class="mode-card" type="button" data-mode="basic" aria-pressed="false">
+          <span>01</span>
+          <strong>基础训练</strong>
+          <em>BASIC TRAINING</em>
+          <p>起飞、悬停、转向、降落</p>
+        </button>
+
+        <button class="mode-card is-active" type="button" data-mode="mission" aria-pressed="true">
+          <span>02</span>
+          <strong>任务训练</strong>
+          <em>MISSION TRAINING</em>
+          <p>航点巡检、障碍规避、定点降落</p>
+        </button>
+      </nav>
+
+      <section class="drone-panel" aria-label="无人机选择">
+        <div class="drone-head">
+          <span>SELECTED AIRCRAFT</span>
+          <strong id="uavName">UAV-X01</strong>
+          <em id="uavType">TRAINING TYPE</em>
+        </div>
+
+        <div class="drone-stage">
+          <div class="landing-ring" aria-hidden="true"></div>
+          <div id="main02Drone" data-model-src="/public/model/drone.glb?v=20260723-1641"></div>
+        </div>
+
+        <div class="uav-switcher">
+          <button type="button" id="prevUav" aria-label="上一架无人机">‹</button>
+          <span id="uavIndex">01 / 03</span>
+          <button type="button" id="nextUav" aria-label="下一架无人机">›</button>
+        </div>
+      </section>
+
+      <aside class="config-panel" aria-label="任务参数">
+        <section>
+          <span class="panel-label">AIRCRAFT PARAMETERS</span>
+          <dl class="spec-list">
+            <div><dt>最大速度</dt><dd id="specSpeed">18 M/S</dd></div>
+            <div><dt>续航时间</dt><dd id="specEndurance">32 MIN</dd></div>
+            <div><dt>操作难度</dt><dd id="specLevel">BASIC</dd></div>
+            <div><dt>载荷能力</dt><dd id="specPayload">1.2 KG</dd></div>
+          </dl>
+        </section>
+
+        <section>
+          <span class="panel-label">TRAINING CONFIG</span>
+          <label class="select-field">
+            <span>训练场景</span>
+            <select id="sceneSelect">
+              <option>城市巡检区域</option>
+              <option>开放空域训练场</option>
+              <option>障碍穿越航线</option>
+            </select>
+          </label>
+          <label class="select-field">
+            <span>训练难度</span>
+            <select id="difficultySelect">
+              <option>NORMAL</option>
+              <option>BASIC</option>
+              <option>ADVANCED</option>
+            </select>
+          </label>
+        </section>
+      </aside>
+
+      <footer class="deploy-bar">
+        <dl>
+          <div><dt>当前模式</dt><dd id="selectedMode">任务训练</dd></div>
+          <div><dt>无人机</dt><dd id="selectedUav">UAV-X01</dd></div>
+          <div><dt>场景</dt><dd id="selectedScene">城市巡检区域</dd></div>
+          <div><dt>难度</dt><dd id="selectedDifficulty">NORMAL</dd></div>
+        </dl>
+        <button class="start-button" id="startSimulation" type="button">
+          <span>开始训练</span>
+          <em>START SIMULATION</em>
+        </button>
+      </footer>
+
+      <output class="terminal-readout" id="terminalReadout">系统待命，等待训练部署。</output>
+    </section>
+  </main>
+
+  <script type="module" src="js/main02.js"></script>
+</body>
+</html>

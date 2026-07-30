@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>无人机飞行仿真训练平台 - 自由训练</title>
+  <link rel="stylesheet" href="css/free-flight.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/js/vendor/three/build/three.module.js",
+        "three/addons/": "/js/vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main class="free-shell" data-map="playground" data-weather="sunny">
+    <div class="screen-backdrop" aria-hidden="true"></div>
+
+    <header class="top-status">
+      <section class="status-left" aria-label="页面导航">
+        <a class="back-link" href="main02.html" aria-label="返回主界面">← 返回主界面</a>
+        <div class="title-stack">
+          <strong>FREE FLIGHT</strong>
+          <span>自由训练</span>
+        </div>
+      </section>
+
+      <section class="status-center" aria-label="系统状态">
+        <span><i></i>SIMULATION READY</span>
+        <span><i></i>CONTROLLER CONNECTED</span>
+      </section>
+
+      <section class="status-right" aria-label="用户操作">
+        <span>当前用户</span>
+        <strong>WANG ZIJIAN</strong>
+        <button class="bar-button" type="button">设置</button>
+        <button class="bar-button" type="button">帮助</button>
+      </section>
+    </header>
+
+    <section class="training-layout" aria-label="自由训练配置">
+      <aside class="map-panel" aria-label="地图选择">
+        <header class="panel-heading">
+          <span>MAP SELECTION</span>
+          <h1>地图选择</h1>
+        </header>
+
+        <div class="map-list">
+          <button class="map-card is-active" type="button" data-map="playground" aria-pressed="true">
+            <span class="map-index">01</span>
+            <div class="map-thumb playground-thumb" aria-hidden="true">
+              <i class="track"></i>
+              <i class="field"></i>
+              <i class="stand"></i>
+              <i class="pad"></i>
+            </div>
+            <div class="map-copy">
+              <em>PLAYGROUND</em>
+              <strong>操场训练区</strong>
+              <small>开阔场地 / 基础飞行</small>
+            </div>
+            <span class="active-tag">ACTIVE</span>
+          </button>
+
+          <button class="map-card" type="button" data-map="forest" aria-pressed="false">
+            <span class="map-index">02</span>
+            <div class="map-thumb forest-thumb" aria-hidden="true">
+              <i class="trees"></i>
+              <i class="path"></i>
+              <i class="bridge"></i>
+              <i class="pad"></i>
+            </div>
+            <div class="map-copy">
+              <em>FOREST</em>
+              <strong>森林飞行区</strong>
+              <small>自然环境 / 障碍飞行</small>
+            </div>
+            <span class="active-tag">ACTIVE</span>
+          </button>
+
+          <button class="map-card is-locked" type="button" disabled>
+            <span class="map-index">03</span>
+            <div class="map-thumb locked-thumb" aria-hidden="true"></div>
+            <div class="map-copy">
+              <em>EXTENSION MAP</em>
+              <strong>扩展地图</strong>
+              <small>COMING SOON</small>
+            </div>
+          </button>
+
+          <button class="map-card is-locked" type="button" disabled>
+            <span class="map-index">04</span>
+            <div class="map-thumb locked-thumb" aria-hidden="true"></div>
+            <div class="map-copy">
+              <em>EXTENSION MAP</em>
+              <strong>扩展地图</strong>
+              <small>COMING SOON</small>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <section class="preview-panel" aria-label="地图场景预览">
+        <header class="preview-toolbar">
+          <div>
+            <span id="previewModeLabel">3D PREVIEW</span>
+            <strong id="previewTitle">操场训练区</strong>
+          </div>
+          <div class="view-actions" aria-label="地图视角">
+            <button class="tool-button is-active" type="button" data-view="3d">3D预览</button>
+            <button class="tool-button" type="button" data-view="top">俯视地图</button>
+            <button class="tool-button" id="resetView" type="button">恢复视角</button>
+          </div>
+        </header>
+
+        <div class="scene-frame">
+          <div id="freeFlightScene" data-model-src="/public/model/drone.glb?v=20260723-1641"></div>
+          <div class="weather-layer" aria-hidden="true"></div>
+          <div class="wind-indicator" aria-hidden="true">
+            <span>WIND</span>
+            <i id="windArrow"></i>
+          </div>
+          <div class="spawn-overlay" id="spawnOverlay" aria-label="起飞点选择"></div>
+          <div class="scene-note">
+            <span id="weatherBadge">晴天</span>
+            <strong id="spawnBadge">中央草坪</strong>
+          </div>
+        </div>
+      </section>
+
+      <aside class="summary-panel" aria-label="当前配置">
+        <section class="summary-card">
+          <header class="panel-heading compact">
+            <span>CURRENT CONFIGURATION</span>
+            <h2>当前配置</h2>
+          </header>
+          <dl class="summary-list">
+            <div><dt>地图</dt><dd id="summaryMap">操场训练区</dd></div>
+            <div><dt>无人机</dt><dd id="summaryUav">UAV-X01</dd></div>
+            <div><dt>起飞点</dt><dd id="summarySpawn">中央草坪</dd></div>
+            <div><dt>天气</dt><dd id="summaryWeather">晴天</dd></div>
+            <div><dt>风速</dt><dd id="summaryWind">2 M/S</dd></div>
+            <div><dt>飞行模式</dt><dd id="summaryAssist">标准控制</dd></div>
+          </dl>
+        </section>
+
+        <nav class="config-entry-list" aria-label="配置入口">
+          <button class="config-entry" type="button" data-panel="drone">
+            <span class="line-icon drone-icon"></span>
+            <strong>无人机设置</strong>
+            <em>→</em>
+          </button>
+          <button class="config-entry" type="button" data-panel="flight">
+            <span class="line-icon controller-icon"></span>
+            <strong>飞行设置</strong>
+            <em>→</em>
+          </button>
+          <button class="config-entry" type="button" data-panel="environment">
+            <span class="line-icon weather-icon"></span>
+            <strong>环境设置</strong>
+            <em>→</em>
+          </button>
+        </nav>
+
+        <section class="map-info">
+          <span>MAP INFORMATION</span>
+          <p id="mapInfo">地形简单，障碍物较少，视线开阔，适合初次自由飞行。</p>
+        </section>
+      </aside>
+
+      <footer class="confirm-bar">
+        <dl>
+          <div><dt>MAP</dt><dd id="barMap">操场训练区</dd></div>
+          <div><dt>UAV</dt><dd id="barUav">UAV-X01</dd></div>
+          <div><dt>SPAWN</dt><dd id="barSpawn">中央草坪</dd></div>
+          <div><dt>ENVIRONMENT</dt><dd id="barEnvironment">晴天 / 东北风 / 2 M/S</dd></div>
+        </dl>
+        <div class="confirm-actions">
+          <button class="reset-button" id="resetDefaults" type="button">恢复默认</button>
+          <button class="start-button" id="startFreeFlight" type="button">
+            <span>进入自由飞行</span>
+            <em>START FREE FLIGHT</em>
+          </button>
+        </div>
+      </footer>
+    </section>
+
+    <div class="drawer-mask" id="drawerMask" hidden></div>
+
+    <aside class="settings-drawer" id="settingsDrawer" aria-hidden="true" aria-label="设置侧边栏">
+      <header class="drawer-head">
+        <div>
+          <span id="drawerKicker">CONFIGURATION</span>
+          <h2 id="drawerTitle">无人机设置</h2>
+        </div>
+        <div class="drawer-actions">
+          <button class="mini-button" id="drawerReset" type="button">恢复默认</button>
+          <button class="close-button" id="drawerClose" type="button" aria-label="关闭">×</button>
+        </div>
+      </header>
+
+      <section class="drawer-section drawer-content is-active" data-content="drone">
+        <div class="choice-stack" id="uavChoices"></div>
+      </section>
+
+      <section class="drawer-section drawer-content" data-content="flight">
+        <div class="field-group">
+          <span class="group-label">初始状态</span>
+          <div class="segmented" data-setting="initialState">
+            <button type="button" data-value="地面待机">地面待机</button>
+            <button type="button" data-value="3米悬停">3米悬停</button>
+            <button type="button" data-value="5米悬停">5米悬停</button>
+          </div>
+        </div>
+
+        <label class="range-field">
+          <span><i class="speed-symbol"></i>速度上限 <strong id="speedValue">8 M/S</strong></span>
+          <input id="speedLimit" type="range" min="2" max="15" step="1" value="8">
+          <em><b>2</b><b>15</b></em>
+        </label>
+
+        <label class="range-field">
+          <span><i class="height-symbol"></i>高度上限 <strong id="heightValue">50 M</strong></span>
+          <input id="heightLimit" type="range" min="10" max="120" step="5" value="50">
+          <em><b>10</b><b>120</b></em>
+        </label>
+
+        <div class="field-group">
+          <span class="group-label">电量模式</span>
+          <div class="segmented" data-setting="batteryMode">
+            <button type="button" data-value="无限电量">无限电量</button>
+            <button type="button" data-value="真实电量">真实电量</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <span class="group-label">碰撞检测</span>
+          <div class="segmented" data-setting="collision">
+            <button type="button" data-value="开启">开启</button>
+            <button type="button" data-value="关闭">关闭</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <span class="group-label">控制辅助</span>
+          <div class="assist-grid" id="assistChoices"></div>
+        </div>
+      </section>
+
+      <section class="drawer-section drawer-content" data-content="environment">
+        <div class="field-group">
+          <span class="group-label">天气类型</span>
+          <div class="weather-options" id="weatherChoices">
+            <button type="button" data-value="sunny"><i class="sun-icon"></i>晴天</button>
+            <button type="button" data-value="rainy"><i class="rain-icon"></i>雨天</button>
+            <button type="button" data-value="foggy"><i class="fog-icon"></i>雾天</button>
+          </div>
+        </div>
+
+        <label class="range-field">
+          <span><i class="wind-symbol"></i>风速 <strong id="windValue">2 M/S</strong></span>
+          <input id="windSpeed" type="range" min="0" max="12" step="1" value="2">
+          <em><b>0</b><b>12</b></em>
+        </label>
+
+        <div class="field-group">
+          <span class="group-label">风向</span>
+          <div class="compass-grid" id="windDirectionChoices"></div>
+        </div>
+
+        <div class="field-group" id="intensityGroup">
+          <span class="group-label">天气强度</span>
+          <div class="segmented" id="weatherIntensityChoices"></div>
+        </div>
+
+        <div class="field-group">
+          <span class="group-label">能见度</span>
+          <div class="segmented" data-setting="visibility">
+            <button type="button" data-value="清晰">清晰</button>
+            <button type="button" data-value="一般">一般</button>
+            <button type="button" data-value="较低">较低</button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="drawer-foot">
+        <button class="cancel-button" id="drawerCancel" type="button">取消</button>
+        <button class="apply-button" id="drawerApply" type="button">应用</button>
+      </footer>
+    </aside>
+  </main>
+
+  <script type="module" src="js/free-flight.js"></script>
+</body>
+</html>
