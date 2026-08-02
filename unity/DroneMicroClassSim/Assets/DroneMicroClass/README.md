@@ -10,7 +10,7 @@
 
 主场景：
 
-`Assets/DroneMicroClass/Scenes/MicroClassFlightDemo.unity`
+`Assets/DroneMicroClass/Scenes/DroneFigureEightTrainingUnity.unity`
 
 ## 操作
 

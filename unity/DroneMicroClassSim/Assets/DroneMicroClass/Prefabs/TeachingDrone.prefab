@@ -15718,6 +15718,19 @@ MonoBehaviour:
   - {fileID: 459556349313216381}
   - {fileID: 1330332970026809757}
   - {fileID: 159245258122608393}
+  assistedTakeoffHeight: 1.8
+  landingDescentSpeed: 0.85
+  landingMotorCutoffHeight: 0.16
+  landingMotorCutoffVerticalSpeed: 0.8
+  rotorStartupSmoothTime: 1.35
+  rotorRuntimeSmoothTime: 0.32
+  rotorShutdownSmoothTime: 3.2
+  takeoffLiftStartRotorSpin: 0.58
+  takeoffFullRotorHeight: 0.75
+  gpsPositionHoldEnabled: 1
+  gpsPositionGain: 1.4
+  gpsVelocityGain: 2.2
+  gpsMaximumAcceleration: 4.5
 --- !u!114 &630148916331046016
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15733,8 +15746,13 @@ MonoBehaviour:
   flightController: {fileID: 1110570188358208250}
   altitudeHold: 1
   stabilize: 1
+  pitchForwardKey: 119
+  pitchBackwardKey: 115
+  rollRightKey: 100
+  rollLeftKey: 97
   ascendKey: 32
   descendKey: 304
+  landingKey: 108
   yawLeftKey: 113
   yawRightKey: 101
   toggleAltitudeHoldKey: 104
@@ -15760,30 +15778,55 @@ MonoBehaviour:
     visualPrefab: {fileID: 919132149155446097, guid: 7eaf289c3cd663047b85e0151d13c88f, type: 3}
     visualTargetSize: 1.55
     visualRotationEuler: {x: 0, y: 180, z: 0}
-    noseCameraLocalPosition: {x: 0, y: 0.2, z: 0.66}
+    noseCameraLocalPosition: {x: 0, y: 0.2, z: 1}
     noseCameraLocalEuler: {x: 0, y: 0, z: 0}
-    levelNoseCamera: 0
-    levelNoseCameraSharpness: 18
+    levelNoseCamera: 1
+    levelNoseCameraSharpness: 24
+    supportsGimbalPitch: 1
+    plasticShellMaterial: {fileID: 2100000, guid: 52a636947ad150b439a5c621379463cb, type: 2}
+    plasticAccentMaterial: {fileID: 2100000, guid: 1b76e83fae5c7194d88752ef49cc1dfd, type: 2}
+    plasticDarkMaterial: {fileID: 2100000, guid: 8130616736b648a438690806cb4434d1, type: 2}
+    plasticRotorMaterial: {fileID: 2100000, guid: bd1c7265d138b3f47905379fc38948d7, type: 2}
+    plasticLensMaterial: {fileID: 2100000, guid: 6c937bbbae309cb48900af3aea2b0b17, type: 2}
   - displayName: DJI Inspire Payload
     profile: {fileID: 11400000, guid: 1baa2d6503e4e4d42a97a3650fc25c81, type: 2}
     visualPrefab: {fileID: 919132149155446097, guid: fce7c580b24c7ee438909c590955db45, type: 3}
     visualTargetSize: 1.75
     visualRotationEuler: {x: 0, y: 180, z: 0}
-    noseCameraLocalPosition: {x: 0, y: 0.22, z: 0.72}
+    noseCameraLocalPosition: {x: 0, y: 0.22, z: 1.12}
     noseCameraLocalEuler: {x: 0, y: 0, z: 0}
     levelNoseCamera: 1
-    levelNoseCameraSharpness: 22
+    levelNoseCameraSharpness: 24
+    supportsGimbalPitch: 1
+    plasticShellMaterial: {fileID: 2100000, guid: c0c35c5412d07f14dbc0ca819b9e9a69, type: 2}
+    plasticAccentMaterial: {fileID: 2100000, guid: 6c0684cff120b684fabe37207c3fb1d5, type: 2}
+    plasticDarkMaterial: {fileID: 2100000, guid: f49622a47d2788846af042dfc7be344d, type: 2}
+    plasticRotorMaterial: {fileID: 2100000, guid: aa96bb953735d8e45bf30a925c33048d, type: 2}
+    plasticLensMaterial: {fileID: 2100000, guid: a5bc412480116e94d961e94e750a2886, type: 2}
   - displayName: Red Guard Agile
     profile: {fileID: 11400000, guid: 4ad29592f638c23449cbbc6054a90b6a, type: 2}
     visualPrefab: {fileID: 100002, guid: f385ef9bb7a1546f993e78d992be5dbe, type: 3}
     visualTargetSize: 1.45
     visualRotationEuler: {x: 0, y: 180, z: 0}
-    noseCameraLocalPosition: {x: 0, y: 0.16, z: 0.64}
+    noseCameraLocalPosition: {x: 0, y: 0.16, z: 0.92}
     noseCameraLocalEuler: {x: 0, y: 0, z: 0}
     levelNoseCamera: 0
-    levelNoseCameraSharpness: 18
+    levelNoseCameraSharpness: 24
+    supportsGimbalPitch: 0
+    plasticShellMaterial: {fileID: 2100000, guid: d873462a3c4941f43a2aedffb500358b, type: 2}
+    plasticAccentMaterial: {fileID: 2100000, guid: da996d47c1b8ca54f9c04d4f7971c8fa, type: 2}
+    plasticDarkMaterial: {fileID: 2100000, guid: 40fafb5bffd29234baee891261f8421c, type: 2}
+    plasticRotorMaterial: {fileID: 2100000, guid: d194e14376f913e4eb18c4dd4c801262, type: 2}
+    plasticLensMaterial: {fileID: 2100000, guid: a8baab3204062d64eb9f6f79288d425f, type: 2}
   startingIndex: 0
   nextAircraftKey: 9
+  gimbalPitchUpKey: 273
+  gimbalPitchDownKey: 274
+  gimbalCenterKey: 98
+  gimbalPitchSpeed: 35
+  minimumGimbalPitch: -90
+  maximumGimbalPitch: 30
+  gimbalPitchDegrees: 0
 --- !u!1 &7591675921995653899
 GameObject:
   m_ObjectHideFlags: 0

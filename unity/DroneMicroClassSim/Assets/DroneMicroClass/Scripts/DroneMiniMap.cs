@@ -1,9 +1,12 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DroneMicroClass
 {
     public sealed class DroneMiniMap : MonoBehaviour
     {
+        private const string FigureEightSceneName = "DroneFigureEightTrainingUnity";
+
         [SerializeField] private SimpleFlightController target;
         [SerializeField] private RectTransform mapArea;
         [SerializeField] private RectTransform aircraftMarker;
@@ -11,6 +14,14 @@ namespace DroneMicroClass
         [SerializeField] private Vector2 worldHalfExtents = new Vector2(20f, 13f);
         [SerializeField] private Vector2 contentViewportMin = new Vector2(48f / 512f, 121f / 512f);
         [SerializeField] private Vector2 contentViewportMax = new Vector2(464f / 512f, 391f / 512f);
+
+        private void Awake()
+        {
+            if (SceneManager.GetActiveScene().name != FigureEightSceneName)
+            {
+                gameObject.SetActive(false);
+            }
+        }
 
         public void Configure(
             SimpleFlightController newTarget,

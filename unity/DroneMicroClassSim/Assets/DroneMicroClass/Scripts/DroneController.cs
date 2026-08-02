@@ -9,6 +9,10 @@ namespace DroneMicroClass
         [SerializeField] private bool stabilize = true;
 
         [Header("Keyboard")]
+        [SerializeField] private KeyCode pitchForwardKey = KeyCode.W;
+        [SerializeField] private KeyCode pitchBackwardKey = KeyCode.S;
+        [SerializeField] private KeyCode rollRightKey = KeyCode.D;
+        [SerializeField] private KeyCode rollLeftKey = KeyCode.A;
         [SerializeField] private KeyCode ascendKey = KeyCode.Space;
         [SerializeField] private KeyCode descendKey = KeyCode.LeftShift;
         [SerializeField] private KeyCode landingKey = KeyCode.L;
@@ -53,8 +57,8 @@ namespace DroneMicroClass
                 flightController.RequestLanding();
             }
 
-            float roll = Mathf.Clamp(Input.GetAxisRaw("Horizontal"), -1f, 1f);
-            float pitch = Mathf.Clamp(Input.GetAxisRaw("Vertical"), -1f, 1f);
+            float roll = BoolAxis(rollRightKey, rollLeftKey);
+            float pitch = BoolAxis(pitchForwardKey, pitchBackwardKey);
             float yaw = BoolAxis(yawRightKey, yawLeftKey);
             float vertical = flightController.MotorsArmed && !flightController.LandingActive
                 ? BoolAxis(ascendKey, descendKey)

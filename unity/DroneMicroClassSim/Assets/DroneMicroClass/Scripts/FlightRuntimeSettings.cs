@@ -10,6 +10,7 @@ namespace DroneMicroClass
 
         private void Awake()
         {
+            Application.runInBackground = true;
             QualitySettings.vSyncCount = 1;
             Application.targetFrameRate = targetFrameRate;
             Time.fixedDeltaTime = fixedTimestep;

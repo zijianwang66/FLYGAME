@@ -15,7 +15,6 @@ namespace DroneMicroClass.Editor
     public static class DroneMicroClassSceneBuilder
     {
         private const string Root = "Assets/DroneMicroClass";
-        private const string ScenePath = Root + "/Scenes/MicroClassFlightDemo.unity";
         private const string FigureEightScenePath = Root + "/Scenes/DroneFigureEightTrainingUnity.unity";
         private const string PrefabPath = Root + "/Prefabs/TeachingDrone.prefab";
         private const string HudPrefabPath = Root + "/Prefabs/FlightHud.prefab";
@@ -24,6 +23,8 @@ namespace DroneMicroClass.Editor
         private const string QuadProfilePath = Root + "/Profiles/QuadRacer.asset";
         private const string InspireProfilePath = Root + "/Profiles/DJIInspire.asset";
         private const string RedProfilePath = Root + "/Profiles/RedGuard.asset";
+        private const string DjiMaterialRoot = Root + "/Materials";
+        private const string VariantMaterialRoot = Root + "/Materials/Drones";
         private const string WildTerrainPath = Root + "/Terrain/WildValleyTerrain.asset";
         private const string GrassTexturePath = Root + "/Terrain/WildGrassTexture.asset";
         private const string DirtTexturePath = Root + "/Terrain/WildDirtTexture.asset";
@@ -140,20 +141,6 @@ namespace DroneMicroClass.Editor
             "Sticks_1.fbx"
         };
 
-        [MenuItem("Drone MicroClass/Build Demo Scene")]
-        public static void BuildDemo()
-        {
-            CreateFolders();
-            SetupUrp();
-            DroneProfile[] profiles = CreateProfiles();
-            DroneFleetManager.DroneVariant[] variants = CreateVariants(profiles);
-            GameObject prefab = CreateDronePrefab(profiles[0], variants);
-            CreateScene(prefab, profiles, variants);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log("Drone MicroClass demo scene built: " + ScenePath);
-        }
-
         [MenuItem("Drone MicroClass/Install Demo Runtime In Current Scene")]
         public static void InstallDemoRuntimeInCurrentScene()
         {
@@ -199,6 +186,7 @@ namespace DroneMicroClass.Editor
             camera.nearClipPlane = 0.05f;
             camera.farClipPlane = 260f;
             camera.fieldOfView = 58f;
+            ConfigureUrpPostProcessing(camera);
             var cameraRig = cameraObject.AddComponent<DroneCameraRig>();
             cameraRig.Configure(drone.transform, fleet, DroneCameraRig.CameraMode.Chase, true);
 
@@ -210,6 +198,7 @@ namespace DroneMicroClass.Editor
             noseCamera.nearClipPlane = 0.03f;
             noseCamera.farClipPlane = 260f;
             noseCamera.depth = -2f;
+            ConfigureNoseFeedRendering(noseCamera);
             var noseRig = noseCameraObject.AddComponent<DroneCameraRig>();
             noseRig.Configure(drone.transform, fleet, DroneCameraRig.CameraMode.Nose, false);
 
@@ -372,10 +361,16 @@ namespace DroneMicroClass.Editor
             mainVariant.FindPropertyRelative("visualPrefab").objectReferenceValue = djiVisual;
             mainVariant.FindPropertyRelative("visualTargetSize").floatValue = 1.55f;
             mainVariant.FindPropertyRelative("visualRotationEuler").vector3Value = new Vector3(0f, 180f, 0f);
-            mainVariant.FindPropertyRelative("noseCameraLocalPosition").vector3Value = new Vector3(0f, 0.2f, 0.66f);
+            mainVariant.FindPropertyRelative("noseCameraLocalPosition").vector3Value = new Vector3(0f, 0.2f, 1f);
             mainVariant.FindPropertyRelative("noseCameraLocalEuler").vector3Value = Vector3.zero;
-            mainVariant.FindPropertyRelative("levelNoseCamera").boolValue = false;
-            mainVariant.FindPropertyRelative("levelNoseCameraSharpness").floatValue = 18f;
+            mainVariant.FindPropertyRelative("levelNoseCamera").boolValue = true;
+            mainVariant.FindPropertyRelative("levelNoseCameraSharpness").floatValue = 24f;
+            mainVariant.FindPropertyRelative("supportsGimbalPitch").boolValue = true;
+            mainVariant.FindPropertyRelative("plasticShellMaterial").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingShell.mat");
+            mainVariant.FindPropertyRelative("plasticAccentMaterial").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingPanel.mat");
+            mainVariant.FindPropertyRelative("plasticDarkMaterial").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingDarkParts.mat");
+            mainVariant.FindPropertyRelative("plasticRotorMaterial").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingPropeller.mat");
+            mainVariant.FindPropertyRelative("plasticLensMaterial").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingLens.mat");
             serializedFleet.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -585,30 +580,30 @@ namespace DroneMicroClass.Editor
                     InspireProfilePath,
                     "DJI Inspire Payload",
                     "CARGO",
-                    "Payload tune for the larger Inspire body: higher mass and damping, reduced tilt and angular limits, and stronger altitude hold for smooth heavy-lift practice.",
-                    mass: 3.65f,
-                    maxLiftForce: 68f,
-                    pitchTorque: 2.05f,
-                    rollTorque: 2.05f,
-                    yawTorque: 0.72f,
-                    maxTiltAngle: 12f,
-                    linearDamping: 0.95f,
-                    angularDamping: 4.5f,
-                    throttleResponse: 0.3f,
-                    angularRateDamping: 0.55f,
-                    cyclicSensitivity: 0.72f,
-                    yawSensitivity: 0.66f,
-                    verticalSensitivity: 0.72f,
-                    inputResponseSpeed: 4.2f,
-                    attitudeTorqueScale: 0.82f,
-                    activeInputBrakeScale: 0.42f,
-                    maxAngularVelocity: 3.8f,
-                    hoverBrakeAcceleration: 4.8f,
-                    maxHoverBrakeForce: 34f,
-                    altitudeChangeSpeed: 1.1f,
-                    altitudePid: new PidGains(14.5f, 0.55f, 9.5f, 32f),
-                    pitchPid: new PidGains(0.105f, 0f, 0.09f, 2.1f),
-                    rollPid: new PidGains(0.105f, 0f, 0.09f, 2.1f),
+                    "DJI Normal-mode tune for the larger Inspire body: smooth stick response, useful tilt authority, firm GPS braking, and stable altitude changes without a racing feel.",
+                    mass: 3.45f,
+                    maxLiftForce: 78f,
+                    pitchTorque: 3.1f,
+                    rollTorque: 3.1f,
+                    yawTorque: 1.05f,
+                    maxTiltAngle: 24f,
+                    linearDamping: 0.72f,
+                    angularDamping: 3.2f,
+                    throttleResponse: 0.68f,
+                    angularRateDamping: 0.62f,
+                    cyclicSensitivity: 0.92f,
+                    yawSensitivity: 0.78f,
+                    verticalSensitivity: 0.9f,
+                    inputResponseSpeed: 7.2f,
+                    attitudeTorqueScale: 1.02f,
+                    activeInputBrakeScale: 0.28f,
+                    maxAngularVelocity: 5.6f,
+                    hoverBrakeAcceleration: 5.6f,
+                    maxHoverBrakeForce: 42f,
+                    altitudeChangeSpeed: 2.2f,
+                    altitudePid: new PidGains(15.8f, 0.55f, 9.8f, 42f),
+                    pitchPid: new PidGains(0.165f, 0f, 0.072f, 3.6f),
+                    rollPid: new PidGains(0.165f, 0f, 0.072f, 3.6f),
                     rotorVisualSpeed: 7600f,
                     rotorVisualAxis: Vector3.forward,
                     rotorGroundSpinRatio: 0.34f,
@@ -753,7 +748,15 @@ namespace DroneMicroClass.Editor
                     visualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DjiMainDronePath) ?? AssetDatabase.LoadAssetAtPath<GameObject>(QuadRacerPath),
                     visualTargetSize = 1.55f,
                     visualRotationEuler = new Vector3(0f, 180f, 0f),
-                    noseCameraLocalPosition = new Vector3(0f, 0.2f, 0.62f)
+                    noseCameraLocalPosition = new Vector3(0f, 0.2f, 1f),
+                    levelNoseCamera = true,
+                    levelNoseCameraSharpness = 24f,
+                    supportsGimbalPitch = true,
+                    plasticShellMaterial = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingShell.mat"),
+                    plasticAccentMaterial = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingPanel.mat"),
+                    plasticDarkMaterial = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingDarkParts.mat"),
+                    plasticRotorMaterial = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingPropeller.mat"),
+                    plasticLensMaterial = AssetDatabase.LoadAssetAtPath<Material>(DjiMaterialRoot + "/DJITrainingLens.mat")
                 },
                 new DroneFleetManager.DroneVariant
                 {
@@ -762,9 +765,15 @@ namespace DroneMicroClass.Editor
                     visualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(InspirePath),
                     visualTargetSize = 1.75f,
                     visualRotationEuler = new Vector3(0f, 180f, 0f),
-                    noseCameraLocalPosition = new Vector3(0f, 0.22f, 0.72f),
+                    noseCameraLocalPosition = new Vector3(0f, 0.22f, 1.12f),
                     levelNoseCamera = true,
-                    levelNoseCameraSharpness = 22f
+                    levelNoseCameraSharpness = 24f,
+                    supportsGimbalPitch = true,
+                    plasticShellMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/InspirePlasticShell.mat"),
+                    plasticAccentMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/InspirePlasticAccent.mat"),
+                    plasticDarkMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/InspirePlasticDark.mat"),
+                    plasticRotorMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/InspirePlasticRotor.mat"),
+                    plasticLensMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/InspirePlasticLens.mat")
                 },
                 new DroneFleetManager.DroneVariant
                 {
@@ -773,7 +782,15 @@ namespace DroneMicroClass.Editor
                     visualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(RedDronePath),
                     visualTargetSize = 1.45f,
                     visualRotationEuler = new Vector3(0f, 180f, 0f),
-                    noseCameraLocalPosition = new Vector3(0f, 0.16f, 0.64f)
+                    noseCameraLocalPosition = new Vector3(0f, 0.16f, 0.92f),
+                    levelNoseCamera = false,
+                    levelNoseCameraSharpness = 24f,
+                    supportsGimbalPitch = false,
+                    plasticShellMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/RedGuardPlasticShell.mat"),
+                    plasticAccentMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/RedGuardPlasticAccent.mat"),
+                    plasticDarkMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/RedGuardPlasticDark.mat"),
+                    plasticRotorMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/RedGuardPlasticRotor.mat"),
+                    plasticLensMaterial = AssetDatabase.LoadAssetAtPath<Material>(VariantMaterialRoot + "/RedGuardPlasticLens.mat")
                 }
             };
         }
@@ -830,78 +847,6 @@ namespace DroneMicroClass.Editor
             return prefab;
         }
 
-        private static void CreateScene(GameObject dronePrefab, DroneProfile[] profiles, DroneFleetManager.DroneVariant[] variants)
-        {
-            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            scene.name = "MicroClassFlightDemo";
-
-            Material padMaterial = CreateMaterial("LandingPad", new Color(0.55f, 0.56f, 0.5f));
-            Material clearingMaterial = CreateMaterial("LaunchClearing", new Color(0.42f, 0.38f, 0.26f));
-            Material waterMaterial = CreateMaterial("Water", new Color(0.12f, 0.42f, 0.62f, 0.75f));
-            Material rockMaterial = CreateMaterial("FieldRock", new Color(0.36f, 0.36f, 0.34f));
-            Material trunkMaterial = CreateMaterial("TreeTrunk", new Color(0.28f, 0.18f, 0.1f));
-            Material foliageMaterial = CreateMaterial("PineFoliage", new Color(0.12f, 0.32f, 0.16f));
-            Material grassPatchMaterial = CreateMaterial("GrassPatch", new Color(0.22f, 0.48f, 0.16f));
-            Material displayPadMaterial = CreateMaterial("DisplayPad", new Color(0.18f, 0.2f, 0.24f));
-
-            ApplyImportedSkybox();
-            ConfigureWildLighting();
-            CreateRuntimeSettings();
-
-            GameObject drone = (GameObject)PrefabUtility.InstantiatePrefab(dronePrefab);
-            drone.transform.position = new Vector3(0f, 1.2f, 2.25f);
-            var flight = drone.GetComponent<SimpleFlightController>();
-            var fleet = drone.GetComponent<DroneFleetManager>();
-            fleet.Configure(flight, drone.transform.Find("Visual Root"), variants, 0);
-            fleet.PreviewVariant(0);
-
-            CreateWildEnvironment(clearingMaterial, waterMaterial, rockMaterial, trunkMaterial, foliageMaterial, grassPatchMaterial);
-
-            GameObject landingPad = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            landingPad.name = "Launch Pad";
-            landingPad.transform.position = new Vector3(0f, GetWildTerrainWorldY(0f, 2.25f) + 0.025f, 2.25f);
-            landingPad.transform.localScale = new Vector3(1.15f, 0.025f, 1.15f);
-            AssignMaterial(landingPad, padMaterial);
-            ReplaceColliderWithMeshCollider(landingPad);
-
-            CreateInitialDroneLineup(displayPadMaterial);
-
-            GameObject lightObject = new GameObject("Sun Light");
-            var light = lightObject.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 1.25f;
-            lightObject.transform.rotation = Quaternion.Euler(48f, -35f, 0f);
-
-            GameObject cameraObject = new GameObject("Follow Camera");
-            cameraObject.tag = "MainCamera";
-            var camera = cameraObject.AddComponent<Camera>();
-            cameraObject.AddComponent<AudioListener>();
-            cameraObject.transform.position = new Vector3(0f, 4.2f, -10.5f);
-            cameraObject.transform.rotation = Quaternion.Euler(16f, 0f, 0f);
-            camera.nearClipPlane = 0.05f;
-            camera.farClipPlane = 260f;
-            camera.fieldOfView = 58f;
-            var cameraRig = cameraObject.AddComponent<DroneCameraRig>();
-            cameraRig.Configure(drone.transform, fleet, DroneCameraRig.CameraMode.Chase, true);
-
-            RenderTexture noseTexture = CreateOrUpdateNoseRenderTexture();
-            GameObject noseCameraObject = new GameObject("Nose Feed Camera");
-            var noseCamera = noseCameraObject.AddComponent<Camera>();
-            noseCamera.targetTexture = noseTexture;
-            noseCamera.fieldOfView = 72f;
-            noseCamera.nearClipPlane = 0.03f;
-            noseCamera.farClipPlane = 260f;
-            noseCamera.depth = -2f;
-            var noseRig = noseCameraObject.AddComponent<DroneCameraRig>();
-            noseRig.Configure(drone.transform, fleet, DroneCameraRig.CameraMode.Nose, false);
-
-            CreateHud(flight, fleet, cameraRig, noseTexture);
-            CreateEventSystem();
-
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
-        }
-
         private static void ConfigureWildLighting()
         {
             RenderSettings.fog = true;
@@ -942,6 +887,31 @@ namespace DroneMicroClass.Editor
             }
 
             CreateEventSystem();
+        }
+
+        private static void ConfigureUrpPostProcessing(Camera camera)
+        {
+            UniversalAdditionalCameraData cameraData = camera.GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null)
+            {
+                cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            }
+
+            cameraData.renderPostProcessing = true;
+            cameraData.volumeLayerMask = LayerMask.GetMask("Default");
+        }
+
+        private static void ConfigureNoseFeedRendering(Camera camera)
+        {
+            UniversalAdditionalCameraData cameraData = camera.GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null)
+            {
+                cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            }
+
+            camera.allowHDR = false;
+            cameraData.renderPostProcessing = false;
+            cameraData.volumeLayerMask = 0;
         }
 
         private static void DisableFixedSceneCameras()
@@ -1646,15 +1616,24 @@ namespace DroneMicroClass.Editor
             var renderTexture = AssetDatabase.LoadAssetAtPath<RenderTexture>(NoseRenderTexturePath);
             if (renderTexture == null)
             {
-                renderTexture = new RenderTexture(512, 256, 16, RenderTextureFormat.ARGB32);
+                renderTexture = new RenderTexture(640, 360, 16, RenderTextureFormat.ARGB32);
                 AssetDatabase.CreateAsset(renderTexture, NoseRenderTexturePath);
             }
 
-            renderTexture.width = 512;
-            renderTexture.height = 256;
+            renderTexture.width = 640;
+            renderTexture.height = 360;
             renderTexture.depth = 16;
             renderTexture.antiAliasing = 2;
             renderTexture.filterMode = FilterMode.Bilinear;
+
+            var serializedTexture = new SerializedObject(renderTexture);
+            SerializedProperty sRgbProperty = serializedTexture.FindProperty("m_SRGB");
+            if (sRgbProperty != null && !sRgbProperty.boolValue)
+            {
+                sRgbProperty.boolValue = true;
+                serializedTexture.ApplyModifiedPropertiesWithoutUndo();
+            }
+
             EditorUtility.SetDirty(renderTexture);
             return renderTexture;
         }
@@ -1712,8 +1691,8 @@ namespace DroneMicroClass.Editor
             Text throttle = CreateHudText(throttlePanel.transform, "Throttle Text", font, new Vector2(0f, -14f), 18, FontStyle.Bold, Color.white, TextAnchor.UpperCenter);
             SetStretch(throttle.rectTransform, 0f, 0f, 1f, 1f, 8f, 8f, -8f, -8f);
 
-            GameObject cameraPanel = CreateHudPanel(canvasObject.transform, "Nose Camera Panel", new Vector2(0f, 32f), new Vector2(560f, 250f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Color(0f, 0.2f, 0f, 0.42f));
-            RawImage noseView = CreateHudRawImage(cameraPanel.transform, "Nose Camera View", noseTexture, new Vector2(0f, 28f), new Vector2(520f, 172f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+            GameObject cameraPanel = CreateHudPanel(canvasObject.transform, "Nose Camera Panel", new Vector2(0f, 32f), new Vector2(520f, 345f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Color(0f, 0f, 0f, 0.42f));
+            RawImage noseView = CreateHudRawImage(cameraPanel.transform, "Nose Camera View", noseTexture, new Vector2(0f, 22f), new Vector2(480f, 270f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
             Text title = CreateHudText(cameraPanel.transform, "Title", font, new Vector2(0f, -12f), 24, FontStyle.Bold, green, TextAnchor.UpperCenter);
             Text speed = CreateHudText(cameraPanel.transform, "Speed", font, new Vector2(-250f, 12f), 20, FontStyle.Bold, green, TextAnchor.LowerLeft);
             Text altitude = CreateHudText(cameraPanel.transform, "Altitude", font, new Vector2(-250f, 38f), 16, FontStyle.Bold, green, TextAnchor.LowerLeft);
@@ -2243,7 +2222,12 @@ namespace DroneMicroClass.Editor
             rect.sizeDelta = size;
             var image = imageObject.AddComponent<RawImage>();
             image.texture = texture;
-            image.color = new Color(0.75f, 1f, 0.75f, 0.9f);
+            image.color = Color.white;
+            var aspectFitter = imageObject.AddComponent<AspectRatioFitter>();
+            aspectFitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
+            aspectFitter.aspectRatio = texture != null && texture.height > 0
+                ? (float)texture.width / texture.height
+                : 16f / 9f;
             image.raycastTarget = false;
             return image;
         }

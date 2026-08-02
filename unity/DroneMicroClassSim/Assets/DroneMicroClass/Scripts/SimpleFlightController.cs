@@ -18,6 +18,12 @@ namespace DroneMicroClass
         [SerializeField, Range(0.1f, 1f)] private float takeoffLiftStartRotorSpin = 0.58f;
         [SerializeField, Min(0.1f)] private float takeoffFullRotorHeight = 0.75f;
 
+        [Header("GPS Position Hold")]
+        [SerializeField] private bool gpsPositionHoldEnabled = true;
+        [SerializeField, Min(0f)] private float gpsPositionGain = 1.4f;
+        [SerializeField, Min(0f)] private float gpsVelocityGain = 2.2f;
+        [SerializeField, Min(0.1f)] private float gpsMaximumAcceleration = 4.5f;
+
         private Rigidbody body;
         private DroneCommand command;
         private PidController altitudePid;
@@ -39,6 +45,7 @@ namespace DroneMicroClass
         private bool landingActive;
         private bool takeoffSequenceActive;
         private float takeoffStartHeight;
+        private Vector3 gpsHoldPosition;
 
         public DroneProfile Profile => profile;
         public float CurrentThrottle => throttle01;
@@ -48,6 +55,11 @@ namespace DroneMicroClass
         public float Speed => body != null ? body.linearVelocity.magnitude : 0f;
         public float HorizontalSpeed => body != null ? Vector3.ProjectOnPlane(body.linearVelocity, Vector3.up).magnitude : 0f;
         public float VerticalSpeed => body != null ? body.linearVelocity.y : 0f;
+        public Vector3 HomePosition => startPosition;
+        public float HorizontalDistanceFromHome => Vector3.ProjectOnPlane(transform.position - startPosition, Vector3.up).magnitude;
+        public float HeightFromHome => transform.position.y - startPosition.y;
+        public bool GpsPositionHoldEnabled => gpsPositionHoldEnabled;
+        public Vector3 GpsHoldPosition => gpsHoldPosition;
         public float LiftToWeightRatio => profile != null && body != null
             ? profile.maxLiftForce / Mathf.Max(0.01f, Mathf.Abs(Physics.gravity.y) * body.mass)
             : 0f;
@@ -56,6 +68,7 @@ namespace DroneMicroClass
         public bool MotorsArmed => motorsArmed;
         public bool LandingActive => landingActive;
         public bool TakeoffSequenceActive => takeoffSequenceActive;
+        public bool AssistedTakeoffControlLockActive => takeoffSequenceActive;
         public float PitchDegrees => NormalizeAngle(transform.eulerAngles.x);
         public float RollDegrees => NormalizeAngle(transform.eulerAngles.z);
         public float YawDegrees => transform.eulerAngles.y;
@@ -80,8 +93,14 @@ namespace DroneMicroClass
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
+            if (GetComponent<DroneWindReceiver>() == null)
+            {
+                gameObject.AddComponent<DroneWindReceiver>();
+            }
+
             startPosition = transform.position;
             startRotation = transform.rotation;
+            CaptureGpsHoldPosition();
             CaptureRotorBaseRotations();
             EnsurePidControllers();
             ApplyProfileToBody();
@@ -113,6 +132,15 @@ namespace DroneMicroClass
 
         public void SetCommand(DroneCommand newCommand)
         {
+            if (takeoffSequenceActive)
+            {
+                newCommand.pitch = 0f;
+                newCommand.roll = 0f;
+                newCommand.yaw = 0f;
+                newCommand.vertical = 0f;
+                newCommand.resetRequested = false;
+            }
+
             command = newCommand;
         }
 
@@ -142,7 +170,12 @@ namespace DroneMicroClass
             landingActive = false;
             takeoffSequenceActive = true;
             takeoffStartHeight = transform.position.y;
+            CaptureGpsHoldPosition();
             throttle01 = 0f;
+            ClearPilotAxes();
+            smoothedPitch = 0f;
+            smoothedRoll = 0f;
+            smoothedYaw = 0f;
             smoothedVertical = 0f;
             targetAltitude = Mathf.Max(targetAltitude, transform.position.y + assistedTakeoffHeight);
             altitudePid?.Reset();
@@ -235,6 +268,7 @@ namespace DroneMicroClass
             ApplyLift(Time.fixedDeltaTime);
             ApplyAttitudeControl(Time.fixedDeltaTime);
             ApplyHoverBrake();
+            ApplyGpsPositionHold();
             UpdateTakeoffSequence();
             TryCompleteLanding();
         }
@@ -317,6 +351,11 @@ namespace DroneMicroClass
             }
 
             bool hasTranslationalInput = Mathf.Abs(smoothedPitch) > 0.05f || Mathf.Abs(smoothedRoll) > 0.05f;
+            if (gpsPositionHoldEnabled && !hasTranslationalInput)
+            {
+                return;
+            }
+
             float brakeAcceleration = profile.hoverBrakeAcceleration > 0f ? profile.hoverBrakeAcceleration : 2.8f;
             float maxBrakeForce = profile.maxHoverBrakeForce > 0f ? profile.maxHoverBrakeForce : 9f;
             float brakeScale = hasTranslationalInput ? Mathf.Clamp01(profile.activeInputBrakeScale) : 1f;
@@ -328,14 +367,53 @@ namespace DroneMicroClass
             body.AddForce(brakeForce, ForceMode.Force);
         }
 
+        private void ApplyGpsPositionHold()
+        {
+            if (!gpsPositionHoldEnabled || !command.stabilizeEnabled)
+            {
+                CaptureGpsHoldPosition();
+                return;
+            }
+
+            bool hasTranslationalInput = Mathf.Abs(smoothedPitch) > 0.05f || Mathf.Abs(smoothedRoll) > 0.05f;
+            if (hasTranslationalInput)
+            {
+                CaptureGpsHoldPosition();
+                return;
+            }
+
+            Vector3 positionError = Vector3.ProjectOnPlane(gpsHoldPosition - transform.position, Vector3.up);
+            Vector3 horizontalVelocity = Vector3.ProjectOnPlane(body.linearVelocity, Vector3.up);
+            Vector3 desiredAcceleration = positionError * gpsPositionGain - horizontalVelocity * gpsVelocityGain;
+            desiredAcceleration = Vector3.ClampMagnitude(desiredAcceleration, gpsMaximumAcceleration);
+            body.AddForce(desiredAcceleration * body.mass, ForceMode.Force);
+        }
+
+        public void SetGpsPositionHold(bool enabled)
+        {
+            gpsPositionHoldEnabled = enabled;
+            CaptureGpsHoldPosition();
+        }
+
+        private void CaptureGpsHoldPosition()
+        {
+            gpsHoldPosition = new Vector3(transform.position.x, 0f, transform.position.z);
+        }
+
         private void UpdateSmoothedCommand(float deltaTime)
         {
             float responseSpeed = profile != null ? Mathf.Max(0.1f, profile.inputResponseSpeed) : 8f;
             float maxDelta = responseSpeed * deltaTime;
-            smoothedPitch = Mathf.MoveTowards(smoothedPitch, command.pitch, maxDelta);
-            smoothedRoll = Mathf.MoveTowards(smoothedRoll, command.roll, maxDelta);
-            smoothedYaw = Mathf.MoveTowards(smoothedYaw, command.yaw, maxDelta);
-            smoothedVertical = Mathf.MoveTowards(smoothedVertical, command.vertical, maxDelta);
+            bool lockPilotAxes = takeoffSequenceActive;
+            float targetPitch = lockPilotAxes ? 0f : command.pitch;
+            float targetRoll = lockPilotAxes ? 0f : command.roll;
+            float targetYaw = lockPilotAxes ? 0f : command.yaw;
+            float targetVertical = lockPilotAxes ? 0f : command.vertical;
+
+            smoothedPitch = Mathf.MoveTowards(smoothedPitch, targetPitch, maxDelta);
+            smoothedRoll = Mathf.MoveTowards(smoothedRoll, targetRoll, maxDelta);
+            smoothedYaw = Mathf.MoveTowards(smoothedYaw, targetYaw, maxDelta);
+            smoothedVertical = Mathf.MoveTowards(smoothedVertical, targetVertical, maxDelta);
         }
 
         private void SpinRotors(float deltaTime)
@@ -520,10 +598,12 @@ namespace DroneMicroClass
             takeoffStartHeight = transform.position.y;
             throttle01 = 0f;
             targetAltitude = transform.position.y;
+            ClearPilotAxes();
             smoothedPitch = 0f;
             smoothedRoll = 0f;
             smoothedYaw = 0f;
             smoothedVertical = 0f;
+            CaptureGpsHoldPosition();
             rotorSpin01 = 0f;
             rotorSpinVelocity = 0f;
             if (rotorAngles != null)
@@ -541,6 +621,15 @@ namespace DroneMicroClass
             pitchPid?.Reset();
             rollPid?.Reset();
             SetMotorPhysicsActive(false);
+        }
+
+        private void ClearPilotAxes()
+        {
+            command.pitch = 0f;
+            command.roll = 0f;
+            command.yaw = 0f;
+            command.vertical = 0f;
+            command.resetRequested = false;
         }
 
         private void SetMotorPhysicsActive(bool active)

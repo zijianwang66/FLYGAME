@@ -14,10 +14,16 @@ namespace DroneMicroClass
             public GameObject visualPrefab;
             public float visualTargetSize = 1.4f;
             public Vector3 visualRotationEuler = new Vector3(0f, 180f, 0f);
-            public Vector3 noseCameraLocalPosition = new Vector3(0f, 0.18f, 0.55f);
+            public Vector3 noseCameraLocalPosition = new Vector3(0f, 0.2f, 1f);
             public Vector3 noseCameraLocalEuler = Vector3.zero;
-            public bool levelNoseCamera;
-            public float levelNoseCameraSharpness = 18f;
+            public bool levelNoseCamera = true;
+            public float levelNoseCameraSharpness = 24f;
+            public bool supportsGimbalPitch = true;
+            public Material plasticShellMaterial;
+            public Material plasticAccentMaterial;
+            public Material plasticDarkMaterial;
+            public Material plasticRotorMaterial;
+            public Material plasticLensMaterial;
         }
 
         [SerializeField] private SimpleFlightController flightController;
@@ -25,6 +31,15 @@ namespace DroneMicroClass
         [SerializeField] private DroneVariant[] variants;
         [SerializeField] private int startingIndex;
         [SerializeField] private KeyCode nextAircraftKey = KeyCode.Tab;
+
+        [Header("Gimbal Pitch")]
+        [SerializeField] private KeyCode gimbalPitchUpKey = KeyCode.UpArrow;
+        [SerializeField] private KeyCode gimbalPitchDownKey = KeyCode.DownArrow;
+        [SerializeField] private KeyCode gimbalCenterKey = KeyCode.B;
+        [SerializeField, Min(1f)] private float gimbalPitchSpeed = 35f;
+        [SerializeField, Range(-90f, 0f)] private float minimumGimbalPitch = -90f;
+        [SerializeField, Range(0f, 30f)] private float maximumGimbalPitch = 30f;
+        [SerializeField, Range(-90f, 30f)] private float gimbalPitchDegrees;
 
         private int currentIndex = -1;
         private GameObject activeVisual;
@@ -37,10 +52,12 @@ namespace DroneMicroClass
         public int CurrentIndex => currentIndex;
         public int VariantCount => variants != null ? variants.Length : 0;
         public string CurrentVariantName => CurrentVariant != null ? CurrentVariant.displayName : "Training Drone";
-        public Vector3 CurrentNoseCameraLocalPosition => CurrentVariant != null ? CurrentVariant.noseCameraLocalPosition : new Vector3(0f, 0.18f, 0.55f);
+        public Vector3 CurrentNoseCameraLocalPosition => CurrentVariant != null ? CurrentVariant.noseCameraLocalPosition : new Vector3(0f, 0.2f, 1f);
         public Vector3 CurrentNoseCameraLocalEuler => CurrentVariant != null ? CurrentVariant.noseCameraLocalEuler : Vector3.zero;
-        public bool CurrentNoseCameraIsLevel => CurrentVariant != null && CurrentVariant.levelNoseCamera;
-        public float CurrentNoseCameraLevelSharpness => CurrentVariant != null ? Mathf.Max(0.1f, CurrentVariant.levelNoseCameraSharpness) : 18f;
+        public bool CurrentNoseCameraIsLevel => CurrentVariant == null || CurrentVariant.levelNoseCamera;
+        public float CurrentNoseCameraLevelSharpness => CurrentVariant != null ? Mathf.Max(0.1f, CurrentVariant.levelNoseCameraSharpness) : 24f;
+        public bool CurrentVariantSupportsGimbalPitch => CurrentVariant == null || CurrentVariant.supportsGimbalPitch;
+        public float CurrentGimbalPitchDegrees => CurrentVariantSupportsGimbalPitch ? gimbalPitchDegrees : 0f;
 
         public void Configure(SimpleFlightController flight, Transform visuals, DroneVariant[] newVariants, int defaultIndex = 0)
         {
@@ -52,6 +69,9 @@ namespace DroneMicroClass
 
         private void Awake()
         {
+            NormalizeGimbalLimits();
+            gimbalPitchDegrees = Mathf.Clamp(gimbalPitchDegrees, minimumGimbalPitch, maximumGimbalPitch);
+
             if (flightController == null)
             {
                 flightController = GetComponent<SimpleFlightController>();
@@ -74,6 +94,8 @@ namespace DroneMicroClass
 
         private void Update()
         {
+            UpdateGimbalPitch();
+
             if (VariantCount == 0)
             {
                 return;
@@ -100,6 +122,66 @@ namespace DroneMicroClass
             }
         }
 
+        public void SetGimbalPitch(float pitchDegrees)
+        {
+            NormalizeGimbalLimits();
+            gimbalPitchDegrees = Mathf.Clamp(pitchDegrees, minimumGimbalPitch, maximumGimbalPitch);
+        }
+
+        private void UpdateGimbalPitch()
+        {
+            if (!CurrentVariantSupportsGimbalPitch)
+            {
+                gimbalPitchDegrees = 0f;
+                return;
+            }
+
+            if (Input.GetKeyDown(gimbalCenterKey))
+            {
+                SetGimbalPitch(0f);
+                return;
+            }
+
+            float input = 0f;
+            if (Input.GetKey(gimbalPitchUpKey))
+            {
+                input += 1f;
+            }
+
+            if (Input.GetKey(gimbalPitchDownKey))
+            {
+                input -= 1f;
+            }
+
+            if (Mathf.Approximately(input, 0f))
+            {
+                return;
+            }
+
+            SetGimbalPitch(gimbalPitchDegrees + input * gimbalPitchSpeed * Time.unscaledDeltaTime);
+        }
+
+        private void NormalizeGimbalLimits()
+        {
+            if (gimbalPitchSpeed < 1f)
+            {
+                gimbalPitchSpeed = 35f;
+            }
+
+            if (Mathf.Approximately(minimumGimbalPitch, maximumGimbalPitch))
+            {
+                minimumGimbalPitch = -90f;
+                maximumGimbalPitch = 30f;
+            }
+
+            minimumGimbalPitch = Mathf.Min(minimumGimbalPitch, 0f);
+            maximumGimbalPitch = Mathf.Max(maximumGimbalPitch, 0f);
+            if (minimumGimbalPitch > maximumGimbalPitch)
+            {
+                (minimumGimbalPitch, maximumGimbalPitch) = (maximumGimbalPitch, minimumGimbalPitch);
+            }
+        }
+
         public void SwitchTo(int index, bool resetMotion)
         {
             if (variants == null || variants.Length == 0)
@@ -115,6 +197,11 @@ namespace DroneMicroClass
             }
 
             currentIndex = index;
+            if (!variant.supportsGimbalPitch)
+            {
+                gimbalPitchDegrees = 0f;
+            }
+
             flightController.SetProfile(variant.profile);
             RebuildVisual(variant);
             if (resetMotion)
@@ -151,7 +238,7 @@ namespace DroneMicroClass
             activeVisual.transform.localRotation = Quaternion.Euler(variant.visualRotationEuler);
             RemoveImportedSceneHelpers(activeVisual);
             HideNonDroneMeshes(activeVisual);
-            ApplyFallbackDroneMaterials(activeVisual);
+            ApplyPlasticDroneMaterials(activeVisual, variant);
             FitRendererToSize(activeVisual, variant.visualTargetSize, 0f);
             flightController.SetRotorVisuals(BuildRotorVisuals(activeVisual.transform));
         }
@@ -458,39 +545,82 @@ namespace DroneMicroClass
             }
         }
 
-        private static void ApplyFallbackDroneMaterials(GameObject target)
+        private static void ApplyPlasticDroneMaterials(GameObject target, DroneVariant variant)
         {
-            Material shell = CreateVisualMaterial("DJI Fallback Shell", new Color(0.68f, 0.72f, 0.72f), 0.54f, 0.02f);
-            Material panel = CreateVisualMaterial("DJI Fallback Panel", new Color(0.38f, 0.43f, 0.46f), 0.45f, 0.02f);
-            Material dark = CreateVisualMaterial("DJI Fallback Dark", new Color(0.09f, 0.10f, 0.11f), 0.42f, 0.0f);
-            Material propeller = CreateVisualMaterial("DJI Fallback Propeller", new Color(0.15f, 0.16f, 0.17f), 0.38f, 0.0f);
-            Material lens = CreateVisualMaterial("DJI Fallback Lens", new Color(0.02f, 0.03f, 0.035f), 0.68f, 0.0f);
+            Material shell = variant.plasticShellMaterial ?? CreateVisualMaterial("Fallback Plastic Shell", new Color(0.68f, 0.72f, 0.72f), 0.46f, 0f);
+            Material accent = variant.plasticAccentMaterial ?? CreateVisualMaterial("Fallback Plastic Accent", new Color(0.38f, 0.43f, 0.46f), 0.38f, 0f);
+            Material dark = variant.plasticDarkMaterial ?? CreateVisualMaterial("Fallback Plastic Dark", new Color(0.09f, 0.10f, 0.11f), 0.32f, 0f);
+            Material propeller = variant.plasticRotorMaterial ?? CreateVisualMaterial("Fallback Plastic Rotor", new Color(0.15f, 0.16f, 0.17f), 0.26f, 0f);
+            Material lens = variant.plasticLensMaterial ?? CreateVisualMaterial("Fallback Camera Lens", new Color(0.02f, 0.03f, 0.035f), 0.72f, 0f);
 
             Renderer[] renderers = target.GetComponentsInChildren<Renderer>(true);
             foreach (Renderer renderer in renderers)
             {
-                string objectName = renderer.gameObject.name.ToLowerInvariant();
-                if (objectName.Contains("\u6868\u53f6"))
+                string searchText = BuildMaterialSearchText(renderer);
+                Material selectedMaterial;
+                if (ContainsAny(searchText, "propeller", "rotor", "blade", "\u6868\u53f6"))
                 {
-                    renderer.sharedMaterial = propeller;
+                    selectedMaterial = propeller;
                 }
-                else if (objectName.Contains("glass") || objectName.Contains("black") || objectName.Contains("\u7403\u4f53"))
+                else if (ContainsAny(searchText, "camera", "lens", "glass", "optic", "\u955c\u5934", "\u7403\u4f53"))
                 {
-                    renderer.sharedMaterial = lens;
+                    selectedMaterial = lens;
                 }
-                else if (objectName.Contains("jt") || objectName.Contains("\u6324\u538b"))
+                else if (ContainsAny(searchText, "motor", "rubber", "black", "dark", "jt", "\u6324\u538b"))
                 {
-                    renderer.sharedMaterial = dark;
+                    selectedMaterial = dark;
                 }
-                else if (objectName.Contains("\u673a\u8eab"))
+                else if (ContainsAny(searchText, "panel", "trim", "arm", "leg", "landing", "skid", "accent"))
                 {
-                    renderer.sharedMaterial = shell;
+                    selectedMaterial = accent;
                 }
                 else
                 {
-                    renderer.sharedMaterial = panel;
+                    selectedMaterial = shell;
+                }
+
+                Material[] slots = renderer.sharedMaterials;
+                if (slots == null || slots.Length == 0)
+                {
+                    renderer.sharedMaterial = selectedMaterial;
+                    continue;
+                }
+
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    slots[i] = selectedMaterial;
+                }
+
+                renderer.sharedMaterials = slots;
+            }
+        }
+
+        private static string BuildMaterialSearchText(Renderer renderer)
+        {
+            string searchText = renderer.gameObject.name.ToLowerInvariant();
+            Material[] materials = renderer.sharedMaterials;
+            foreach (Material material in materials)
+            {
+                if (material != null)
+                {
+                    searchText += " " + material.name.ToLowerInvariant();
                 }
             }
+
+            return searchText;
+        }
+
+        private static bool ContainsAny(string value, params string[] terms)
+        {
+            foreach (string term in terms)
+            {
+                if (value.Contains(term))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static Material CreateVisualMaterial(string name, Color color, float smoothness, float metallic)

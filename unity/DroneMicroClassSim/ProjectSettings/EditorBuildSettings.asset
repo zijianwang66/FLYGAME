@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/DroneMicroClass/Scenes/MicroClassFlightDemo.unity
-    guid: 2f57438d7ca6666439b4c50d43d0a2fa
+    path: Assets/DroneMicroClass/Scenes/DroneFigureEightTrainingUnity.unity
+    guid: 2a01bf95a1ccd194591ecb92daeaa061
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

@@ -25,6 +25,8 @@ namespace DroneMicroClass
         [SerializeField] private float lookAheadTime = 0.2f;
         [SerializeField] private float maxLookAheadDistance = 3.5f;
         [SerializeField] private bool yawOnlyFollowOffset = true;
+        [SerializeField] private bool stabilizeNoseHorizon = true;
+        [SerializeField] private float noseHorizonSharpness = 24f;
         [SerializeField] private KeyCode nextCameraKey = KeyCode.C;
         [SerializeField] private KeyCode previousCameraKey = KeyCode.V;
 
@@ -46,6 +48,8 @@ namespace DroneMicroClass
                 };
             }
         }
+
+        public float GimbalPitchDegrees => fleet != null ? fleet.CurrentGimbalPitchDegrees : 0f;
 
         public void Configure(Transform newTarget, DroneFleetManager newFleet, CameraMode initialMode, bool inputEnabled)
         {
@@ -170,14 +174,20 @@ namespace DroneMicroClass
 
         private void MoveNoseCamera()
         {
-            Vector3 localPosition = fleet != null ? fleet.CurrentNoseCameraLocalPosition : new Vector3(0f, 0.18f, 0.55f);
+            Vector3 localPosition = fleet != null ? fleet.CurrentNoseCameraLocalPosition : new Vector3(0f, 0.2f, 1f);
             Vector3 localEuler = fleet != null ? fleet.CurrentNoseCameraLocalEuler : Vector3.zero;
-            if (fleet != null && fleet.CurrentNoseCameraIsLevel)
+            Vector3 gimbalEuler = localEuler + new Vector3(-GimbalPitchDegrees, 0f, 0f);
+            bool keepHorizonLevel = fleet != null
+                ? fleet.CurrentNoseCameraIsLevel
+                : stabilizeNoseHorizon;
+            if (keepHorizonLevel)
             {
                 Quaternion yawOnly = GetYawOnlyRotation();
-                Vector3 desiredPosition = target.position + yawOnly * localPosition;
-                Quaternion desiredRotation = yawOnly * Quaternion.Euler(localEuler);
-                float sharpness = fleet.CurrentNoseCameraLevelSharpness;
+                Vector3 desiredPosition = target.TransformPoint(localPosition);
+                Quaternion desiredRotation = yawOnly * Quaternion.Euler(gimbalEuler);
+                float sharpness = fleet != null
+                    ? Mathf.Max(noseHorizonSharpness, fleet.CurrentNoseCameraLevelSharpness)
+                    : noseHorizonSharpness;
                 float deltaTime = Mathf.Max(Time.unscaledDeltaTime, 0.0001f);
 
                 transform.position = desiredPosition;
@@ -199,7 +209,7 @@ namespace DroneMicroClass
 
             noseCameraSnapInitialized = false;
             transform.position = target.TransformPoint(localPosition);
-            transform.rotation = target.rotation * Quaternion.Euler(localEuler);
+            transform.rotation = target.rotation * Quaternion.Euler(gimbalEuler);
         }
     }
 }

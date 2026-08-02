@@ -14,44 +14,44 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DroneMicroClass.DroneProfile
   displayName: DJI Inspire Payload
   modelCode: CARGO
-  handlingNotes: 'Payload tune for the larger Inspire body: higher mass and damping,
-    reduced tilt and angular limits, and stronger altitude hold for smooth heavy-lift
-    practice.'
-  mass: 3.65
-  linearDamping: 0.95
-  angularDamping: 4.5
-  maxLiftForce: 68
-  pitchTorque: 2.05
-  rollTorque: 2.05
-  yawTorque: 0.72
-  maxTiltAngle: 12
-  throttleResponse: 0.3
-  angularRateDamping: 0.55
-  hoverBrakeAcceleration: 4.8
-  maxHoverBrakeForce: 34
-  cyclicSensitivity: 0.72
-  yawSensitivity: 0.66
-  verticalSensitivity: 0.72
-  inputResponseSpeed: 4.2
-  attitudeTorqueScale: 0.82
-  activeInputBrakeScale: 0.42
-  maxAngularVelocity: 3.8
-  altitudeChangeSpeed: 1.1
+  handlingNotes: 'DJI Normal-mode tune for the larger Inspire body: smooth stick
+    response, useful tilt authority, firm GPS braking, and stable altitude changes
+    without a racing feel.'
+  mass: 3.45
+  linearDamping: 0.72
+  angularDamping: 3.2
+  maxLiftForce: 78
+  pitchTorque: 3.1
+  rollTorque: 3.1
+  yawTorque: 1.05
+  maxTiltAngle: 24
+  throttleResponse: 0.68
+  angularRateDamping: 0.62
+  hoverBrakeAcceleration: 5.6
+  maxHoverBrakeForce: 42
+  cyclicSensitivity: 0.92
+  yawSensitivity: 0.78
+  verticalSensitivity: 0.9
+  inputResponseSpeed: 7.2
+  attitudeTorqueScale: 1.02
+  activeInputBrakeScale: 0.28
+  maxAngularVelocity: 5.6
+  altitudeChangeSpeed: 2.2
   altitudePid:
-    proportional: 14.5
+    proportional: 15.8
     integral: 0.55
-    derivative: 9.5
-    outputLimit: 32
+    derivative: 9.8
+    outputLimit: 42
   pitchPid:
-    proportional: 0.105
+    proportional: 0.165
     integral: 0
-    derivative: 0.09
-    outputLimit: 2.1
+    derivative: 0.072
+    outputLimit: 3.6
   rollPid:
-    proportional: 0.105
+    proportional: 0.165
     integral: 0
-    derivative: 0.09
-    outputLimit: 2.1
+    derivative: 0.072
+    outputLimit: 3.6
   rotorVisualSpeed: 7600
   rotorVisualAxis: {x: 0, y: 0, z: 1}
   rotorGroundSpinRatio: 0.34
