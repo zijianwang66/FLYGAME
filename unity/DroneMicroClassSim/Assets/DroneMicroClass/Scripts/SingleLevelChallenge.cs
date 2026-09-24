@@ -44,6 +44,7 @@ namespace DroneMicroClass
         private readonly List<Vector3> markerBaseScales = new List<Vector3>();
         private readonly List<LineRenderer> markerBeams = new List<LineRenderer>();
         private readonly List<Light> markerLights = new List<Light>();
+        private bool finishWhenFinalCheckpointCleared;
         private ChallengeCheckpoint finishTrigger;
         private Renderer finishMarkerRenderer;
         private Vector3 finishMarkerBaseScale = Vector3.one;
@@ -168,6 +169,12 @@ namespace DroneMicroClass
             if (checkpoint.Index == expectedCheckpoint)
             {
                 expectedCheckpoint++;
+                if (finishWhenFinalCheckpointCleared && expectedCheckpoint >= RequiredCheckpointCount)
+                {
+                    FinishChallenge();
+                    return;
+                }
+
                 SetFeedback($"Checkpoint {checkpoint.Index + 1} cleared.", 1.6f);
                 UpdateCourseVisuals();
             }
@@ -424,6 +431,7 @@ namespace DroneMicroClass
 
         private void BuildCourseTriggers()
         {
+            bool generatedDefaultCourse = false;
             if (checkpoints == null || checkpoints.Length == 0)
             {
                 if (!createDefaultCourseIfEmpty)
@@ -432,6 +440,7 @@ namespace DroneMicroClass
                 }
 
                 checkpoints = CreateDefaultCheckpointTransforms();
+                generatedDefaultCourse = true;
             }
 
             checkpointTriggers.Clear();
@@ -456,6 +465,12 @@ namespace DroneMicroClass
                 markerBaseScales.Add(checkpoints[i].localScale);
                 markerBeams.Add(showGuidanceLights ? CreateVerticalGuideBeam("Checkpoint_" + (i + 1) + "_Beam", checkpoints[i], guideBeamHeight) : null);
                 markerLights.Add(showGuidanceLights ? CreateGuideLight("Checkpoint_" + (i + 1) + "_Light", checkpoints[i], new Color(0.15f, 0.95f, 1f, 1f)) : null);
+            }
+
+            finishWhenFinalCheckpointCleared = generatedDefaultCourse && finishTarget == null;
+            if (finishWhenFinalCheckpointCleared)
+            {
+                return;
             }
 
             Vector3 finishPosition = finishTarget != null
@@ -496,10 +511,13 @@ namespace DroneMicroClass
             Vector3 origin = drone != null ? drone.transform.position : displayOrigin;
             Vector3[] positions =
             {
-                origin + new Vector3(0f, 3f, 18f),
-                origin + new Vector3(16f, 4f, 34f),
-                origin + new Vector3(-16f, 4f, 50f),
-                origin + new Vector3(0f, 3f, 66f)
+                origin + new Vector3(-18f, 3.2f, 18f),
+                origin + new Vector3(0f, 4.2f, 30f),
+                origin + new Vector3(18f, 4.2f, 18f),
+                origin + new Vector3(22f, 4.2f, 42f),
+                origin + new Vector3(0f, 4.2f, 56f),
+                origin + new Vector3(-22f, 4.2f, 42f),
+                origin + new Vector3(-18f, 3.2f, 26f)
             };
 
             Transform[] generated = new Transform[positions.Length];
