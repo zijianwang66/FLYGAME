@@ -120,7 +120,10 @@ namespace DroneMicroClass
                 || normalizedName.Contains("assessment")
                 || normalizedName.Contains("考核");
 
-            ApplyPreset(normalizedName.Contains("forest") ? WindPreset.Moderate : WindPreset.Light);
+            bool isTrainingAssessment = normalizedName.Contains("figureeight")
+                || normalizedName.Contains("trainingunity")
+                || normalizedName.Contains("training");
+            ApplyPreset(isTrainingAssessment ? WindPreset.NoWind : normalizedName.Contains("forest") ? WindPreset.Moderate : WindPreset.Light);
             noiseSeed = 100f + Mathf.Abs(sceneName != null ? sceneName.GetHashCode() % 10000 : 0) * 0.01f;
         }
 

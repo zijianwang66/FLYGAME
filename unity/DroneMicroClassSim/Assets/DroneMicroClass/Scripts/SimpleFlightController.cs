@@ -169,6 +169,7 @@ namespace DroneMicroClass
             motorsArmed = true;
             landingActive = false;
             takeoffSequenceActive = true;
+            LevelBodyAtCurrentYaw();
             takeoffStartHeight = transform.position.y;
             CaptureGpsHoldPosition();
             throttle01 = 0f;
@@ -217,6 +218,10 @@ namespace DroneMicroClass
             {
                 transform.SetPositionAndRotation(startPosition, startRotation);
             }
+            else
+            {
+                LevelBodyAtCurrentYaw();
+            }
 
             ResetControlState();
         }
@@ -253,10 +258,12 @@ namespace DroneMicroClass
 
             if (takeoffSequenceActive && body.isKinematic)
             {
+                LevelBodyAtCurrentYaw();
                 throttle01 = 0f;
                 targetAltitude = takeoffStartHeight + assistedTakeoffHeight;
                 if (rotorSpin01 >= takeoffLiftStartRotorSpin * 0.96f)
                 {
+                    LevelBodyAtCurrentYaw();
                     SetMotorPhysicsActive(true);
                     altitudePid?.Reset();
                 }
@@ -566,6 +573,17 @@ namespace DroneMicroClass
             ResetMotion(true);
         }
 
+        private void LevelBodyAtCurrentYaw()
+        {
+            Vector3 euler = transform.eulerAngles;
+            transform.rotation = Quaternion.Euler(0f, euler.y, 0f);
+            if (body != null)
+            {
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
+        }
+
         private void TryCompleteLanding()
         {
             if (!landingActive)
@@ -654,6 +672,8 @@ namespace DroneMicroClass
 
             body.isKinematic = false;
             body.useGravity = true;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
             body.WakeUp();
         }
 

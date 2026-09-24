@@ -6,6 +6,15 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/DroneMicroClass/Scenes/Login.unity
+    guid: 1f6c2bb8337f4c6488a6624f4b2d9a11
+  - enabled: 1
+    path: Assets/DroneMicroClass/Scenes/MainMenu.unity
+    guid: f691549fa156c964eb0b4ea6ec838797
+  - enabled: 1
+    path: Assets/DroneMicroClass/Scenes/Loading.unity
+    guid: b53d6bb8bf45af54fb300b1ba848d616
+  - enabled: 1
     path: Assets/DroneMicroClass/Scenes/DroneFigureEightTrainingUnity.unity
     guid: 2a01bf95a1ccd194591ecb92daeaa061
   m_configObjects: {}
