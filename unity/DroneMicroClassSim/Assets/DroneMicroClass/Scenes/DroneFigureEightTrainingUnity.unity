@@ -36070,6 +36070,11 @@ MonoBehaviour:
   createDefaultCourseIfEmpty: 1
   startWhenDroneTakesOff: 1
   displayOrigin: {x: 325, y: 48, z: 468}
+  showGuidanceLights: 1
+  guideBeamHeight: 8
+  guideLineWidth: 0.18
+  guideLightRange: 10
+  guideLightIntensity: 3.2
 --- !u!4 &1332167105
 Transform:
   m_ObjectHideFlags: 0
