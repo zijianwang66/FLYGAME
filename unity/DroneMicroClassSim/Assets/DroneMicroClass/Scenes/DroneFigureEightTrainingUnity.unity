@@ -36067,6 +36067,10 @@ MonoBehaviour:
   wrongCheckpointPenalty: 8
   collisionPenalty: 10
   unsafeAltitudePenalty: 2
+  courseHalfWidth: 10
+  outOfCourseGraceSeconds: 1
+  outOfCoursePenaltyInterval: 2
+  outOfCoursePenalty: 3
   createDefaultCourseIfEmpty: 1
   startWhenDroneTakesOff: 1
   displayOrigin: {x: 325, y: 48, z: 468}

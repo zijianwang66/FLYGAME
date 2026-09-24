@@ -27,6 +27,12 @@ namespace DroneMicroClass
         [SerializeField] private int collisionPenalty = 10;
         [SerializeField] private int unsafeAltitudePenalty = 2;
 
+        [Header("Course Boundary")]
+        [SerializeField] private float courseHalfWidth = 10f;
+        [SerializeField] private float outOfCourseGraceSeconds = 1f;
+        [SerializeField] private float outOfCoursePenaltyInterval = 2f;
+        [SerializeField] private int outOfCoursePenalty = 3;
+
         [Header("Auto Setup")]
         [SerializeField] private bool createDefaultCourseIfEmpty = true;
         [SerializeField] private bool startWhenDroneTakesOff = true;
@@ -45,6 +51,8 @@ namespace DroneMicroClass
         private readonly List<LineRenderer> markerBeams = new List<LineRenderer>();
         private readonly List<Light> markerLights = new List<Light>();
         private bool finishWhenFinalCheckpointCleared;
+        private bool hasCourseStartPosition;
+        private Vector3 courseStartPosition;
         private ChallengeCheckpoint finishTrigger;
         private Renderer finishMarkerRenderer;
         private Vector3 finishMarkerBaseScale = Vector3.one;
@@ -63,6 +71,9 @@ namespace DroneMicroClass
         private int collisions;
         private int wrongCheckpointHits;
         private int unsafeAltitudeTicks;
+        private int outOfCourseTicks;
+        private bool isOutOfCourse;
+        private float nextOutOfCoursePenaltyTime;
         private bool briefingAccepted;
         private GameObject briefingPanel;
         private GameObject resultPanel;
@@ -126,6 +137,7 @@ namespace DroneMicroClass
             if (state == ChallengeState.Running)
             {
                 UpdateAltitudePenalty();
+                UpdateCourseBoundaryPenalty();
                 UpdateCourseVisuals();
                 if (ElapsedSeconds >= maxTimeSeconds)
                 {
@@ -222,8 +234,11 @@ namespace DroneMicroClass
             collisions = 0;
             wrongCheckpointHits = 0;
             unsafeAltitudeTicks = 0;
+            outOfCourseTicks = 0;
+            isOutOfCourse = false;
             lastCollisionPenaltyTime = -10f;
             nextAltitudePenaltyTime = Time.time + altitudePenaltyInterval;
+            nextOutOfCoursePenaltyTime = Time.time + outOfCourseGraceSeconds;
             SetFeedback("Mission started. Follow the highlighted checkpoint.", 2f);
             UpdateCourseVisuals();
             if (resultText != null)
@@ -267,6 +282,8 @@ namespace DroneMicroClass
             collisions = 0;
             wrongCheckpointHits = 0;
             unsafeAltitudeTicks = 0;
+            outOfCourseTicks = 0;
+            isOutOfCourse = false;
             lastCollisionPenaltyTime = -10f;
             SetFeedback("Take off or press Enter to start.", 3f);
             UpdateCourseVisuals();
@@ -312,6 +329,105 @@ namespace DroneMicroClass
             }
         }
 
+        private void UpdateCourseBoundaryPenalty()
+        {
+            if (IsDroneInsideCourse())
+            {
+                if (isOutOfCourse)
+                {
+                    SetFeedback("Back inside the training course.", 1.4f);
+                }
+
+                isOutOfCourse = false;
+                nextOutOfCoursePenaltyTime = Time.time + outOfCourseGraceSeconds;
+                return;
+            }
+
+            if (!isOutOfCourse)
+            {
+                isOutOfCourse = true;
+                nextOutOfCoursePenaltyTime = Time.time + outOfCourseGraceSeconds;
+                SetFeedback("已飞出训练航道，请回到蓝色8字飞行道内。", 2f);
+                return;
+            }
+
+            if (Time.time < nextOutOfCoursePenaltyTime)
+            {
+                return;
+            }
+
+            AddPenalty(outOfCoursePenalty);
+            outOfCourseTicks++;
+            nextOutOfCoursePenaltyTime = Time.time + outOfCoursePenaltyInterval;
+            SetFeedback("已飞出训练航道，请回到蓝色8字飞行道内。", 2f);
+        }
+
+        private bool IsDroneInsideCourse()
+        {
+            if (drone == null || checkpointTriggers.Count < 2)
+            {
+                return true;
+            }
+
+            Vector3 position = drone.transform.position;
+            float maxDistanceSq = Mathf.Max(0.1f, courseHalfWidth) * Mathf.Max(0.1f, courseHalfWidth);
+            if (hasCourseStartPosition)
+            {
+                float startDistanceSq = DistanceSqToSegmentXZ(position, courseStartPosition, checkpointTriggers[0].transform.position);
+                if (startDistanceSq <= maxDistanceSq)
+                {
+                    return true;
+                }
+            }
+
+            for (int i = 0; i < checkpointTriggers.Count; i++)
+            {
+                int nextIndex = i + 1;
+                if (nextIndex >= checkpointTriggers.Count)
+                {
+                    if (!finishWhenFinalCheckpointCleared)
+                    {
+                        break;
+                    }
+
+                    nextIndex = 0;
+                }
+
+                if (checkpointTriggers[i] == null || checkpointTriggers[nextIndex] == null)
+                {
+                    continue;
+                }
+
+                float distanceSq = DistanceSqToSegmentXZ(
+                    position,
+                    checkpointTriggers[i].transform.position,
+                    checkpointTriggers[nextIndex].transform.position);
+                if (distanceSq <= maxDistanceSq)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static float DistanceSqToSegmentXZ(Vector3 point, Vector3 segmentStart, Vector3 segmentEnd)
+        {
+            Vector2 p = new Vector2(point.x, point.z);
+            Vector2 a = new Vector2(segmentStart.x, segmentStart.z);
+            Vector2 b = new Vector2(segmentEnd.x, segmentEnd.z);
+            Vector2 segment = b - a;
+            float lengthSq = segment.sqrMagnitude;
+            if (lengthSq <= 0.0001f)
+            {
+                return (p - a).sqrMagnitude;
+            }
+
+            float t = Mathf.Clamp01(Vector2.Dot(p - a, segment) / lengthSq);
+            Vector2 closest = a + segment * t;
+            return (p - closest).sqrMagnitude;
+        }
+
         private void AddPenalty(int value)
         {
             penalties += Mathf.Max(0, value);
@@ -329,7 +445,8 @@ namespace DroneMicroClass
             int collisionPenaltyTotal = collisions * collisionPenalty;
             int wrongCheckpointPenaltyTotal = wrongCheckpointHits * wrongCheckpointPenalty;
             int unsafeAltitudePenaltyTotal = unsafeAltitudeTicks * unsafeAltitudePenalty;
-            int countedEventPenalty = collisionPenaltyTotal + wrongCheckpointPenaltyTotal + unsafeAltitudePenaltyTotal;
+            int outOfCoursePenaltyTotal = outOfCourseTicks * outOfCoursePenalty;
+            int countedEventPenalty = collisionPenaltyTotal + wrongCheckpointPenaltyTotal + unsafeAltitudePenaltyTotal + outOfCoursePenaltyTotal;
             int otherPenalty = Mathf.Max(0, penalties - countedEventPenalty);
             int incompleteCheckpoints = Mathf.Max(0, RequiredCheckpointCount - expectedCheckpoint);
             int incompleteCheckpointPenalty = incompleteCheckpoints * 12;
@@ -343,6 +460,7 @@ namespace DroneMicroClass
                 CollisionPenalty = collisionPenaltyTotal,
                 WrongCheckpointPenalty = wrongCheckpointPenaltyTotal,
                 UnsafeAltitudePenalty = unsafeAltitudePenaltyTotal,
+                OutOfCoursePenalty = outOfCoursePenaltyTotal,
                 OtherPenalty = otherPenalty,
                 IncompleteCheckpointPenalty = incompleteCheckpointPenalty,
                 IncompleteCheckpoints = incompleteCheckpoints,
@@ -404,6 +522,7 @@ namespace DroneMicroClass
                     $"Overtime: -{score.TimePenalty}\n" +
                     $"Collisions: {collisions} x {collisionPenalty} = -{score.CollisionPenalty}\n" +
                     $"Wrong gates: {wrongCheckpointHits} x {wrongCheckpointPenalty} = -{score.WrongCheckpointPenalty}\n" +
+                    $"Out of course: {outOfCourseTicks} x {outOfCoursePenalty} = -{score.OutOfCoursePenalty}\n" +
                     $"Unsafe altitude: {unsafeAltitudeTicks} x {unsafeAltitudePenalty} = -{score.UnsafeAltitudePenalty}\n" +
                     $"Other penalties: -{score.OtherPenalty}\n" +
                     $"Incomplete checkpoints: {score.IncompleteCheckpoints} x 12 = -{score.IncompleteCheckpointPenalty}\n" +
@@ -420,6 +539,7 @@ namespace DroneMicroClass
                 completionTimeSeconds = score.ElapsedSeconds,
                 collisions = collisions,
                 wrongCheckpointHits = wrongCheckpointHits,
+                outOfCourseTicks = outOfCourseTicks,
                 unsafeAltitudeTicks = unsafeAltitudeTicks,
                 droneName = GetDroneName(),
                 recordedAt = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
@@ -532,6 +652,8 @@ namespace DroneMicroClass
         private Transform[] CreateDefaultCheckpointTransforms()
         {
             Vector3 origin = drone != null ? drone.transform.position : displayOrigin;
+            courseStartPosition = origin;
+            hasCourseStartPosition = true;
             Vector3[] positions =
             {
                 origin + new Vector3(-18f, 3.2f, 18f),
@@ -849,7 +971,7 @@ namespace DroneMicroClass
                 $"Checkpoints: {Mathf.Min(expectedCheckpoint, RequiredCheckpointCount)}/{RequiredCheckpointCount}\n" +
                 $"Time: {FormatTime(state == ChallengeState.Waiting ? 0f : ElapsedSeconds)} / Target {FormatTime(targetTimeSeconds)}\n" +
                 $"Score: {score.FinalScore}  Grade: {score.Grade}  Penalty: {score.TotalPenalty}\n" +
-                $"Collisions: {collisions}  Wrong gates: {wrongCheckpointHits}  Altitude warnings: {unsafeAltitudeTicks}\n" +
+                $"Collisions: {collisions}  Wrong gates: {wrongCheckpointHits}  Out of course: {outOfCourseTicks}  Altitude warnings: {unsafeAltitudeTicks}\n" +
                 "Enter start  R restart  Esc menu";
 
             if (feedbackText != null && Time.time > feedbackUntilTime && state == ChallengeState.Running)
@@ -1055,6 +1177,7 @@ namespace DroneMicroClass
             public int CollisionPenalty;
             public int WrongCheckpointPenalty;
             public int UnsafeAltitudePenalty;
+            public int OutOfCoursePenalty;
             public int OtherPenalty;
             public int IncompleteCheckpointPenalty;
             public int IncompleteCheckpoints;

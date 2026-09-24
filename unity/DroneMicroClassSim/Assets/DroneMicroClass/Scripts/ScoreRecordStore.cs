@@ -16,6 +16,7 @@ namespace DroneMicroClass
             public float completionTimeSeconds;
             public int collisions;
             public int wrongCheckpointHits;
+            public int outOfCourseTicks;
             public int unsafeAltitudeTicks;
             public string droneName;
             public string recordedAt;
