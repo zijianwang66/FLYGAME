@@ -63,6 +63,8 @@ namespace DroneMicroClass
         private int collisions;
         private int wrongCheckpointHits;
         private int unsafeAltitudeTicks;
+        private bool briefingAccepted;
+        private GameObject briefingPanel;
         private GameObject resultPanel;
         private Text titleText;
         private Text detailText;
@@ -105,6 +107,17 @@ namespace DroneMicroClass
                 return;
             }
 
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                ReturnToMenu();
+            }
+
+            if (!briefingAccepted)
+            {
+                UpdateHud();
+                return;
+            }
+
             if (state == ChallengeState.Waiting && startWhenDroneTakesOff && drone.Altitude > 0.35f)
             {
                 BeginChallenge();
@@ -132,11 +145,6 @@ namespace DroneMicroClass
             else if (Input.GetKeyDown(KeyCode.Return) && state == ChallengeState.Waiting)
             {
                 BeginChallenge();
-            }
-
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                ReturnToMenu();
             }
 
             UpdateHud();
@@ -270,6 +278,21 @@ namespace DroneMicroClass
             if (resultPanel != null)
             {
                 resultPanel.SetActive(false);
+            }
+        }
+
+        private void AcceptBriefing()
+        {
+            briefingAccepted = true;
+            if (briefingPanel != null)
+            {
+                briefingPanel.SetActive(false);
+            }
+
+            SetFeedback("Take off and fly to Checkpoint 1.", 3f);
+            if (resultText != null)
+            {
+                resultText.text = "Take off to start / Enter manual start";
             }
         }
 
@@ -677,6 +700,7 @@ namespace DroneMicroClass
             Button menuButton = CreateButton(resultPanel.transform, "Menu", new Vector2(172f, -474f), new Vector2(220f, 64f));
             menuButton.onClick.AddListener(ReturnToMenu);
             resultPanel.SetActive(false);
+            briefingPanel = CreateBriefingPanel(canvasObject.transform);
 
             titleText.font = font;
             detailText.font = font;
@@ -685,6 +709,48 @@ namespace DroneMicroClass
             resultTitleText.font = font;
             resultSummaryText.font = font;
             resultBreakdownText.font = font;
+        }
+
+        private GameObject CreateBriefingPanel(Transform parent)
+        {
+            GameObject overlay = new GameObject("Training Briefing Overlay", typeof(RectTransform), typeof(Image));
+            overlay.transform.SetParent(parent, false);
+            RectTransform overlayRect = overlay.GetComponent<RectTransform>();
+            overlayRect.anchorMin = Vector2.zero;
+            overlayRect.anchorMax = Vector2.one;
+            overlayRect.pivot = new Vector2(0.5f, 0.5f);
+            overlayRect.anchoredPosition = Vector2.zero;
+            overlayRect.sizeDelta = Vector2.zero;
+
+            Image overlayImage = overlay.GetComponent<Image>();
+            overlayImage.color = new Color(0.01f, 0.02f, 0.03f, 0.66f);
+
+            GameObject panel = CreatePanel(overlay.transform, "Training Briefing Panel", Vector2.zero, new Vector2(920f, 640f), new Color(0.015f, 0.045f, 0.06f, 0.95f));
+            Text title = CreateText(panel.transform, "Briefing Title", new Vector2(0f, -34f), new Vector2(820f, 48f), 32, FontStyle.Bold, TextAnchor.UpperCenter);
+            title.text = "Level 1: 8字飞行训练";
+
+            Text subtitle = CreateText(panel.transform, "Briefing Subtitle", new Vector2(0f, -84f), new Vector2(820f, 36f), 22, FontStyle.Bold, TextAnchor.UpperCenter);
+            subtitle.text = "沿着蓝色8字航道完成一整圈飞行";
+
+            Text body = CreateText(panel.transform, "Briefing Body", new Vector2(58f, -142f), new Vector2(804f, 360f), 21, FontStyle.Normal, TextAnchor.UpperLeft);
+            body.text =
+                "任务目标\n" +
+                "操控无人机沿蓝色8字飞行道飞行，按顺序穿过7个高亮提示点。通过第7个提示点后，任务完成。\n\n" +
+                "飞控操作\n" +
+                "W / S：前进 / 后退    A / D：左移 / 右移\n" +
+                "空格：起飞或上升    Ctrl：下降或降落\n" +
+                "鼠标或方向键：调整朝向    Esc：返回菜单\n\n" +
+                "得分规则\n" +
+                "初始分为100分。完成时间越短，得分越高。飞出8字航道、碰撞障碍物、检查点顺序错误、高度过低或过高都会扣分。\n\n" +
+                "训练提示\n" +
+                "转弯前提前减速，进入交叉区域时观察下一个提示点，尽量保持在蓝色航道中心。";
+
+            Button startButton = CreateButton(panel.transform, "开始训练", new Vector2(-150f, -548f), new Vector2(240f, 62f));
+            startButton.onClick.AddListener(AcceptBriefing);
+
+            Button menuButton = CreateButton(panel.transform, "返回菜单", new Vector2(150f, -548f), new Vector2(240f, 62f));
+            menuButton.onClick.AddListener(ReturnToMenu);
+            return overlay;
         }
 
         private static Text CreateText(Transform parent, string objectName, Vector2 anchoredPosition, Vector2 size, int fontSize, FontStyle style, TextAnchor alignment)
@@ -699,6 +765,7 @@ namespace DroneMicroClass
             rect.sizeDelta = size;
 
             Text text = textObject.GetComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = fontSize;
             text.fontStyle = style;
             text.alignment = alignment;
@@ -764,6 +831,18 @@ namespace DroneMicroClass
 
             ScoreBreakdown score = BuildScoreBreakdown();
             titleText.text = "Level 1: Figure Eight Flight Test";
+            if (!briefingAccepted)
+            {
+                detailText.text =
+                    "State: Briefing\n" +
+                    "Next target: Checkpoint 1\n" +
+                    $"Checkpoints: 0/{RequiredCheckpointCount}\n" +
+                    $"Time: 00:00 / Target {FormatTime(targetTimeSeconds)}\n" +
+                    "Score: 100  Grade: S  Penalty: 0\n" +
+                    "Read the training briefing, then press Start Training.";
+                return;
+            }
+
             detailText.text =
                 $"State: {GetStateLabel()}\n" +
                 $"Next target: {GetTargetLabel()}\n" +
