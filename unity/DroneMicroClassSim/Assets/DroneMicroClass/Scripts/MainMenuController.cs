@@ -7,7 +7,7 @@ namespace DroneMicroClass
 {
     public sealed class MainMenuController : MonoBehaviour
     {
-        [SerializeField] private string loadingSceneName = "Loading";
+        [SerializeField] private string trainingSceneSelectionName = "TrainingSceneSelection";
         [SerializeField] private GameObject scorePlaceholderPanel;
         [SerializeField] private Text scorePlaceholderText;
 
@@ -42,7 +42,7 @@ namespace DroneMicroClass
 
         public void StartSingleLevel()
         {
-            SceneManager.LoadScene(loadingSceneName);
+            SceneManager.LoadScene(trainingSceneSelectionName);
         }
 
         public void ReturnToLogin()
@@ -433,7 +433,7 @@ namespace DroneMicroClass
 
             System.Text.StringBuilder builder = new System.Text.StringBuilder();
             builder.AppendLine("最近 10 条训练记录");
-            builder.AppendLine("排名  分数  等级  用时   碰撞  错误  高度  飞行器  时间");
+            builder.AppendLine("排名  分数  等级  用时   碰撞  越界  高度  飞行器  时间");
             for (int i = 0; i < records.Length; i++)
             {
                 ScoreRecordStore.ScoreRecord record = records[i];
@@ -447,7 +447,7 @@ namespace DroneMicroClass
                 builder.Append("   ");
                 builder.Append(record.collisions);
                 builder.Append("    ");
-                builder.Append(record.wrongCheckpointHits);
+                builder.Append(record.outOfCourseTicks);
                 builder.Append("      ");
                 builder.Append(record.unsafeAltitudeTicks);
                 builder.Append("    ");

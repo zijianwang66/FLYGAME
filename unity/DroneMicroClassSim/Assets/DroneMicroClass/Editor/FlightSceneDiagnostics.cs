@@ -8,7 +8,7 @@ namespace DroneMicroClass
 {
     public static class FlightSceneDiagnostics
     {
-        private const string LevelScenePath = "Assets/DroneMicroClass/Scenes/DroneFigureEightTrainingUnity.unity";
+        private const string LevelScenePath = "Assets/DroneMicroClass/Scenes/8字飞行.unity";
 
         [MenuItem("Drone MicroClass/Diagnostics/Write Flight Scene Report")]
         public static void WriteFlightSceneReport()
@@ -77,7 +77,7 @@ namespace DroneMicroClass
             builder.AppendLine();
             builder.AppendLine("Runtime wind expectation");
             builder.AppendLine("No WindSystem is saved in this scene unless listed above; WindSystem creates one after scene load.");
-            builder.AppendLine("For DroneFigureEightTrainingUnity, current code auto-applies Light wind unless changed at runtime.");
+            builder.AppendLine("For 8字飞行, current code auto-applies Light wind unless changed at runtime.");
 
             WriteReport(builder);
         }

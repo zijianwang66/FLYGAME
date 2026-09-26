@@ -346,7 +346,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20d730c032778b840bfb35eee1593f4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DroneMicroClass.LoadingScreenController
-  targetSceneName: DroneFigureEightTrainingUnity
+  targetSceneName: 8字飞行
   progressBar: {fileID: 1856274696}
   progressText: {fileID: 1777319053}
 --- !u!4 &810289614

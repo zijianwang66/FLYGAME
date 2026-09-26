@@ -15,7 +15,7 @@ namespace DroneMicroClass.Editor
     public static class DroneMicroClassSceneBuilder
     {
         private const string Root = "Assets/DroneMicroClass";
-        private const string FigureEightScenePath = Root + "/Scenes/DroneFigureEightTrainingUnity.unity";
+        private const string FigureEightScenePath = Root + "/Scenes/8字飞行.unity";
         private const string PrefabPath = Root + "/Prefabs/TeachingDrone.prefab";
         private const string HudPrefabPath = Root + "/Prefabs/FlightHud.prefab";
         private const string DjiMainDronePath = Root + "/Models/Drones/DJI/DJI_Drone.fbx";
@@ -1785,7 +1785,7 @@ namespace DroneMicroClass.Editor
                 parent,
                 "Mini Map",
                 new Vector2(-24f, -24f),
-                new Vector2(250f, 250f),
+                new Vector2(350f, 250f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
@@ -1803,7 +1803,7 @@ namespace DroneMicroClass.Editor
                 hudRoot.transform,
                 "Mini Map",
                 new Vector2(-24f, -24f),
-                new Vector2(250f, 250f),
+                new Vector2(350f, 250f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
@@ -1819,7 +1819,7 @@ namespace DroneMicroClass.Editor
             panelRect.anchorMax = new Vector2(1f, 1f);
             panelRect.pivot = new Vector2(1f, 1f);
             panelRect.anchoredPosition = new Vector2(-24f, -24f);
-            panelRect.sizeDelta = new Vector2(250f, 250f);
+            panelRect.sizeDelta = new Vector2(350f, 250f);
 
             var panelImage = panel.GetComponent<Image>() ?? panel.AddComponent<Image>();
             panelImage.color = new Color(0f, 0f, 0f, 0.36f);
@@ -1837,7 +1837,11 @@ namespace DroneMicroClass.Editor
             GameObject trackObject = new GameObject("Mini Map Track", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             trackObject.transform.SetParent(panel.transform, false);
             var trackRect = trackObject.GetComponent<RectTransform>();
-            SetStretch(trackRect, 0f, 0f, 1f, 1f, 10f, 10f, -10f, -10f);
+            trackRect.anchorMin = new Vector2(0.5f, 0.5f);
+            trackRect.anchorMax = trackRect.anchorMin;
+            trackRect.pivot = new Vector2(0.5f, 0.5f);
+            trackRect.anchoredPosition = Vector2.zero;
+            trackRect.sizeDelta = new Vector2(230f, 230f);
             var trackImage = trackObject.GetComponent<Image>();
             trackImage.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(MiniMapTrackSpritePath);
             trackImage.color = Color.white;

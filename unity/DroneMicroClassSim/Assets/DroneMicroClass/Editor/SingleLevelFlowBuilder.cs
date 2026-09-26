@@ -15,7 +15,7 @@ namespace DroneMicroClass
         private const string LoginScenePath = SceneRoot + "/Login.unity";
         private const string MainMenuScenePath = SceneRoot + "/MainMenu.unity";
         private const string LoadingScenePath = SceneRoot + "/Loading.unity";
-        private const string LevelScenePath = SceneRoot + "/DroneFigureEightTrainingUnity.unity";
+        private const string LevelScenePath = SceneRoot + "/8字飞行.unity";
 
         [MenuItem("Drone MicroClass/Build Single Level Flow")]
         public static void BuildSingleLevelFlow()
@@ -98,7 +98,7 @@ namespace DroneMicroClass
             GameObject controllerObject = new GameObject("Loading Screen Controller");
             LoadingScreenController controller = controllerObject.AddComponent<LoadingScreenController>();
             SerializedObject serialized = new SerializedObject(controller);
-            serialized.FindProperty("targetSceneName").stringValue = "DroneFigureEightTrainingUnity";
+            serialized.FindProperty("targetSceneName").stringValue = "8字飞行";
             serialized.FindProperty("progressBar").objectReferenceValue = slider;
             serialized.FindProperty("progressText").objectReferenceValue = progressText;
             serialized.ApplyModifiedPropertiesWithoutUndo();
