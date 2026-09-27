@@ -1152,13 +1152,13 @@ namespace DroneMicroClass
             briefingBodyText = CreateText(panel.transform, "Briefing Body", new Vector2(90f, -142f), new Vector2(1220f, 650f), 21, FontStyle.Normal, TextAnchor.UpperLeft);
             briefingControlsDiagram = CreateControlsDiagram(panel.transform);
             briefingControlsDiagram.SetActive(false);
-            briefingPageText = CreateText(panel.transform, "Briefing Page", new Vector2(0f, -852f), new Vector2(220f, 32f), 18, FontStyle.Normal, TextAnchor.UpperCenter);
+            briefingPageText = CreateText(panel.transform, "Briefing Page", new Vector2(0f, -850f), new Vector2(220f, 32f), 18, FontStyle.Normal, TextAnchor.UpperCenter);
 
-            Button nextButton = CreateButton(panel.transform, "下一步", new Vector2(-150f, -910f), new Vector2(240f, 62f));
+            Button nextButton = CreateButton(panel.transform, "下一步", new Vector2(-150f, -912f), new Vector2(240f, 62f));
             nextButton.onClick.AddListener(AdvanceBriefing);
             briefingNextButtonText = nextButton.GetComponentInChildren<Text>();
 
-            Button menuButton = CreateButton(panel.transform, "返回菜单", new Vector2(150f, -910f), new Vector2(240f, 62f));
+            Button menuButton = CreateButton(panel.transform, "返回菜单", new Vector2(150f, -912f), new Vector2(240f, 62f));
             menuButton.onClick.AddListener(ReturnToMenu);
             UpdateBriefingPage();
             return overlay;
@@ -1181,8 +1181,8 @@ namespace DroneMicroClass
             RectTransform bodyRect = briefingBodyText.rectTransform;
             if (showControlsDiagram)
             {
-                bodyRect.anchoredPosition = new Vector2(120f, -810f);
-                bodyRect.sizeDelta = new Vector2(1160f, 42f);
+                bodyRect.anchoredPosition = new Vector2(120f, -800f);
+                bodyRect.sizeDelta = new Vector2(1160f, 34f);
                 briefingBodyText.fontSize = 17;
             }
             else
@@ -1239,8 +1239,8 @@ namespace DroneMicroClass
                 imageRect.anchorMin = new Vector2(0.5f, 1f);
                 imageRect.anchorMax = imageRect.anchorMin;
                 imageRect.pivot = new Vector2(0.5f, 1f);
-                imageRect.anchoredPosition = new Vector2(0f, -104f);
-                imageRect.sizeDelta = new Vector2(980f, 735f);
+                imageRect.anchoredPosition = new Vector2(0f, -124f);
+                imageRect.sizeDelta = new Vector2(880f, 660f);
 
                 RawImage image = imageObject.GetComponent<RawImage>();
                 image.texture = controlsTexture;
@@ -1249,7 +1249,7 @@ namespace DroneMicroClass
                 return imageObject;
             }
 
-            GameObject missingPanel = CreatePanel(parent, "CAAC Controls Image Missing", new Vector2(0f, -104f), new Vector2(980f, 735f), new Color(0.98f, 0.98f, 0.96f, 1f));
+            GameObject missingPanel = CreatePanel(parent, "CAAC Controls Image Missing", new Vector2(0f, -124f), new Vector2(880f, 660f), new Color(0.98f, 0.98f, 0.96f, 1f));
             RectTransform missingRect = missingPanel.GetComponent<RectTransform>();
             missingRect.anchorMin = new Vector2(0.5f, 1f);
             missingRect.anchorMax = missingRect.anchorMin;

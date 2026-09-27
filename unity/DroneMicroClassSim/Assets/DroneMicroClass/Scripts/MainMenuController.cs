@@ -111,10 +111,11 @@ namespace DroneMicroClass
 
         private Canvas EnsureCanvas()
         {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
+            Canvas canvas = GetComponentInChildren<Canvas>(true);
             if (canvas == null)
             {
                 GameObject canvasObject = new GameObject("Main Menu Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+                canvasObject.transform.SetParent(transform, false);
                 canvas = canvasObject.GetComponent<Canvas>();
             }
 
@@ -392,11 +393,7 @@ namespace DroneMicroClass
                 return;
             }
 
-            Canvas canvas = FindFirstObjectByType<Canvas>();
-            if (canvas == null)
-            {
-                canvas = EnsureCanvas();
-            }
+            Canvas canvas = EnsureCanvas();
 
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             scoreRecordsPanel = CreatePanel(canvas.transform, "Score Records Panel", Vector2.zero, new Vector2(980f, 680f), new Color(0.94f, 0.985f, 1f, 0.96f));

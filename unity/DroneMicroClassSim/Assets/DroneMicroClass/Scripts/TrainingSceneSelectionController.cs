@@ -188,10 +188,11 @@ namespace DroneMicroClass
 
         private Canvas EnsureCanvas()
         {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
+            Canvas canvas = GetComponentInChildren<Canvas>(true);
             if (canvas == null)
             {
                 GameObject canvasObject = new GameObject("Training Scene Selection Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+                canvasObject.transform.SetParent(transform, false);
                 canvas = canvasObject.GetComponent<Canvas>();
             }
 
