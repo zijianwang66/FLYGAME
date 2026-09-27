@@ -15750,11 +15750,11 @@ MonoBehaviour:
   pitchBackwardKey: 115
   rollRightKey: 100
   rollLeftKey: 97
-  ascendKey: 32
-  descendKey: 304
+  ascendKey: 273
+  descendKey: 274
   landingKey: 108
-  yawLeftKey: 113
-  yawRightKey: 101
+  yawLeftKey: 276
+  yawRightKey: 275
   toggleAltitudeHoldKey: 104
   toggleStabilizeKey: 116
   resetKey: 8
@@ -15820,8 +15820,8 @@ MonoBehaviour:
     plasticLensMaterial: {fileID: 2100000, guid: a8baab3204062d64eb9f6f79288d425f, type: 2}
   startingIndex: 0
   nextAircraftKey: 9
-  gimbalPitchUpKey: 273
-  gimbalPitchDownKey: 274
+  gimbalPitchUpKey: 280
+  gimbalPitchDownKey: 281
   gimbalCenterKey: 98
   gimbalPitchSpeed: 35
   minimumGimbalPitch: -90

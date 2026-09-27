@@ -115,6 +115,7 @@ namespace DroneMicroClass
         private Text briefingBodyText;
         private Text briefingPageText;
         private Text briefingNextButtonText;
+        private GameObject briefingControlsDiagram;
 
         private int RequiredCheckpointCount => checkpointTriggers.Count;
         private float ElapsedSeconds => state == ChallengeState.Finished ? finishTime - startTime : Time.time - startTime;
@@ -392,7 +393,7 @@ namespace DroneMicroClass
             }
 
             SetDroneInputEnabled(true);
-            SetFeedback("按住空格起飞，开始训练任务。", 3f);
+            SetFeedback("长按 S + D + ↓ + ← 解锁起飞，开始训练任务。", 3f);
             if (resultText != null)
             {
                 resultText.text = string.Empty;
@@ -1142,20 +1143,22 @@ namespace DroneMicroClass
             Image overlayImage = overlay.GetComponent<Image>();
             overlayImage.color = new Color(0.01f, 0.02f, 0.03f, 0.66f);
 
-            GameObject panel = CreatePanel(overlay.transform, "Training Briefing Panel", Vector2.zero, new Vector2(920f, 640f), new Color(0.015f, 0.045f, 0.06f, 0.95f));
-            briefingTitleText = CreateText(panel.transform, "Briefing Title", new Vector2(0f, -34f), new Vector2(820f, 48f), 32, FontStyle.Bold, TextAnchor.UpperCenter);
+            GameObject panel = CreatePanel(overlay.transform, "Training Briefing Panel", Vector2.zero, new Vector2(1400f, 1000f), new Color(0.015f, 0.045f, 0.06f, 0.95f));
+            briefingTitleText = CreateText(panel.transform, "Briefing Title", new Vector2(0f, -34f), new Vector2(1240f, 48f), 32, FontStyle.Bold, TextAnchor.UpperCenter);
 
-            briefingSubtitleText = CreateText(panel.transform, "Briefing Subtitle", new Vector2(0f, -84f), new Vector2(820f, 36f), 22, FontStyle.Bold, TextAnchor.UpperCenter);
+            briefingSubtitleText = CreateText(panel.transform, "Briefing Subtitle", new Vector2(0f, -84f), new Vector2(1240f, 36f), 22, FontStyle.Bold, TextAnchor.UpperCenter);
             briefingSubtitleText.text = RouteSubtitle;
 
-            briefingBodyText = CreateText(panel.transform, "Briefing Body", new Vector2(58f, -142f), new Vector2(804f, 350f), 21, FontStyle.Normal, TextAnchor.UpperLeft);
-            briefingPageText = CreateText(panel.transform, "Briefing Page", new Vector2(0f, -500f), new Vector2(220f, 32f), 18, FontStyle.Normal, TextAnchor.UpperCenter);
+            briefingBodyText = CreateText(panel.transform, "Briefing Body", new Vector2(90f, -142f), new Vector2(1220f, 650f), 21, FontStyle.Normal, TextAnchor.UpperLeft);
+            briefingControlsDiagram = CreateControlsDiagram(panel.transform);
+            briefingControlsDiagram.SetActive(false);
+            briefingPageText = CreateText(panel.transform, "Briefing Page", new Vector2(0f, -852f), new Vector2(220f, 32f), 18, FontStyle.Normal, TextAnchor.UpperCenter);
 
-            Button nextButton = CreateButton(panel.transform, "下一步", new Vector2(-150f, -548f), new Vector2(240f, 62f));
+            Button nextButton = CreateButton(panel.transform, "下一步", new Vector2(-150f, -910f), new Vector2(240f, 62f));
             nextButton.onClick.AddListener(AdvanceBriefing);
             briefingNextButtonText = nextButton.GetComponentInChildren<Text>();
 
-            Button menuButton = CreateButton(panel.transform, "返回菜单", new Vector2(150f, -548f), new Vector2(240f, 62f));
+            Button menuButton = CreateButton(panel.transform, "返回菜单", new Vector2(150f, -910f), new Vector2(240f, 62f));
             menuButton.onClick.AddListener(ReturnToMenu);
             UpdateBriefingPage();
             return overlay;
@@ -1169,6 +1172,26 @@ namespace DroneMicroClass
             }
 
             briefingPageIndex = Mathf.Clamp(briefingPageIndex, 0, BriefingPageCount - 1);
+            bool showControlsDiagram = briefingPageIndex == BriefingPageCount - 1;
+            if (briefingControlsDiagram != null)
+            {
+                briefingControlsDiagram.SetActive(showControlsDiagram);
+            }
+
+            RectTransform bodyRect = briefingBodyText.rectTransform;
+            if (showControlsDiagram)
+            {
+                bodyRect.anchoredPosition = new Vector2(120f, -810f);
+                bodyRect.sizeDelta = new Vector2(1160f, 42f);
+                briefingBodyText.fontSize = 17;
+            }
+            else
+            {
+                bodyRect.anchoredPosition = new Vector2(90f, -142f);
+                bodyRect.sizeDelta = new Vector2(1220f, 650f);
+                briefingBodyText.fontSize = 21;
+            }
+
             switch (briefingPageIndex)
             {
                 case 0:
@@ -1189,15 +1212,7 @@ namespace DroneMicroClass
 
                 default:
                     briefingTitleText.text = "基础操作";
-                    briefingBodyText.text =
-                        "W / S：前进 / 后退\n" +
-                        "A / D：向左 / 向右移动\n" +
-                        "Q / E：向左 / 向右调整朝向\n" +
-                        "空格：起飞或上升\n" +
-                        "左 Shift：下降    L：降落\n" +
-                        "V：切换飞行视角\n" +
-                        "方向键 ↑ / ↓：调整云台俯仰    B：云台回正\n\n" +
-                        "点击“开始训练”后，按住空格起飞。无人机离地后才开始计时。";
+                    briefingBodyText.text = "键盘：W/S/A/D 对应左摇杆，方向键对应右摇杆。长按 S + D + ↓ + ← 解锁/起飞。";
                     break;
             }
 
@@ -1211,6 +1226,155 @@ namespace DroneMicroClass
                 briefingNextButtonText.text = briefingPageIndex == BriefingPageCount - 1 ? "开始训练" : "下一步";
             }
         }
+
+        private static GameObject CreateControlsDiagram(Transform parent)
+        {
+            Texture2D controlsTexture = Resources.Load<Texture2D>("UI/caac-controls");
+            if (controlsTexture != null)
+            {
+                GameObject imageObject = new GameObject("CAAC Controls Image", typeof(RectTransform), typeof(RawImage));
+                imageObject.transform.SetParent(parent, false);
+
+                RectTransform imageRect = imageObject.GetComponent<RectTransform>();
+                imageRect.anchorMin = new Vector2(0.5f, 1f);
+                imageRect.anchorMax = imageRect.anchorMin;
+                imageRect.pivot = new Vector2(0.5f, 1f);
+                imageRect.anchoredPosition = new Vector2(0f, -104f);
+                imageRect.sizeDelta = new Vector2(980f, 735f);
+
+                RawImage image = imageObject.GetComponent<RawImage>();
+                image.texture = controlsTexture;
+                image.color = Color.white;
+                image.raycastTarget = false;
+                return imageObject;
+            }
+
+            GameObject missingPanel = CreatePanel(parent, "CAAC Controls Image Missing", new Vector2(0f, -104f), new Vector2(980f, 735f), new Color(0.98f, 0.98f, 0.96f, 1f));
+            RectTransform missingRect = missingPanel.GetComponent<RectTransform>();
+            missingRect.anchorMin = new Vector2(0.5f, 1f);
+            missingRect.anchorMax = missingRect.anchorMin;
+            missingRect.pivot = new Vector2(0.5f, 1f);
+            CreateText(missingPanel.transform, "Missing Controls Image", Vector2.zero, new Vector2(860f, 80f), 24, FontStyle.Bold, TextAnchor.MiddleCenter).text =
+                "缺少遥控器说明图：Resources/UI/caac-controls.png";
+            return missingPanel;
+        }
+
+#if false
+            GameObject root = CreatePanel(parent, "CAAC Controls Diagram", new Vector2(0f, -132f), new Vector2(804f, 292f), Color.white);
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0.5f, 1f);
+            rootRect.anchorMax = rootRect.anchorMin;
+            rootRect.pivot = new Vector2(0.5f, 1f);
+
+            Image rootImage = root.GetComponent<Image>();
+            rootImage.color = new Color(0.98f, 0.98f, 0.96f, 1f);
+
+            GameObject content = new GameObject("Diagram Content", typeof(RectTransform));
+            content.transform.SetParent(root.transform, false);
+            RectTransform contentRect = content.GetComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0.5f, 0.5f);
+            contentRect.anchorMax = contentRect.anchorMin;
+            contentRect.pivot = new Vector2(0.5f, 0.5f);
+            contentRect.anchoredPosition = new Vector2(0f, 146f);
+            contentRect.sizeDelta = Vector2.zero;
+
+            Color ink = new Color(0.02f, 0.02f, 0.02f, 1f);
+            Color paleInk = new Color(0.02f, 0.02f, 0.02f, 0.72f);
+
+            Transform page = content.transform;
+
+            GameObject titleFrame = CreateDiagramRect(page, "Diagram Title Frame", new Vector2(0f, -24f), new Vector2(368f, 38f), Color.clear, ink, 2f);
+            Text title = CreateDiagramText(titleFrame.transform, "功能适配 CAAC 训练", Vector2.zero, new Vector2(350f, 34f), 25, FontStyle.Bold, TextAnchor.MiddleCenter, ink);
+            title.raycastTarget = false;
+
+            GameObject controller = CreateDiagramRect(page, "Controller Outline", new Vector2(0f, -88f), new Vector2(460f, 180f), Color.clear, ink, 3f);
+            CreateDiagramRect(controller.transform, "Top Handle", new Vector2(0f, -2f), new Vector2(260f, 32f), Color.clear, ink, 3f);
+            CreateDiagramRect(controller.transform, "Center Screen", new Vector2(0f, -54f), new Vector2(126f, 54f), Color.clear, ink, 2f);
+            CreateDiagramRect(controller.transform, "Power Switch", new Vector2(170f, -130f), new Vector2(42f, 54f), Color.clear, ink, 2f);
+            CreateDiagramText(controller.transform, "I\nO", new Vector2(170f, -134f), new Vector2(36f, 48f), 17, FontStyle.Bold, TextAnchor.MiddleCenter, ink);
+
+            CreateStick(controller.transform, "Left Stick", new Vector2(-118f, -76f), "横滚 / 俯仰", ink);
+            CreateStick(controller.transform, "Right Stick", new Vector2(118f, -76f), "偏航 / 升降", ink);
+            CreateDiagramRect(controller.transform, "Left Trim", new Vector2(-118f, -138f), new Vector2(86f, 22f), Color.clear, ink, 2f);
+            CreateDiagramRect(controller.transform, "Right Trim", new Vector2(118f, -138f), new Vector2(86f, 22f), Color.clear, ink, 2f);
+            CreateDiagramText(controller.transform, "||||", new Vector2(-118f, -140f), new Vector2(80f, 20f), 16, FontStyle.Bold, TextAnchor.MiddleCenter, ink);
+            CreateDiagramText(controller.transform, "||||", new Vector2(118f, -140f), new Vector2(80f, 20f), 16, FontStyle.Bold, TextAnchor.MiddleCenter, ink);
+            CreateDiagramText(controller.transform, "●", new Vector2(-150f, -36f), new Vector2(28f, 28f), 20, FontStyle.Bold, TextAnchor.MiddleCenter, ink);
+            CreateDiagramText(controller.transform, "●", new Vector2(150f, -36f), new Vector2(28f, 28f), 20, FontStyle.Bold, TextAnchor.MiddleCenter, ink);
+
+            CreateDiagramText(page, "辅助通道", new Vector2(-308f, -82f), new Vector2(150f, 32f), 20, FontStyle.Bold, TextAnchor.MiddleLeft, ink);
+            CreateDiagramLine(page, "Left Aux Lead", new Vector2(-218f, -90f), new Vector2(-144f, -46f), 3f, ink);
+            CreateDiagramText(page, "辅助通道", new Vector2(308f, -82f), new Vector2(150f, 32f), 20, FontStyle.Bold, TextAnchor.MiddleRight, ink);
+            CreateDiagramLine(page, "Right Aux Lead", new Vector2(218f, -90f), new Vector2(144f, -46f), 3f, ink);
+
+            CreateDiagramText(page, "左摇杆：\n横滚 / 俯仰", new Vector2(-310f, -158f), new Vector2(166f, 56f), 19, FontStyle.Bold, TextAnchor.MiddleLeft, ink);
+            CreateDiagramLine(page, "Left Stick Lead", new Vector2(-212f, -166f), new Vector2(-122f, -140f), 3f, ink);
+            CreateDiagramText(page, "右摇杆：\n偏航 / 升降", new Vector2(310f, -158f), new Vector2(166f, 56f), 19, FontStyle.Bold, TextAnchor.MiddleRight, ink);
+            CreateDiagramLine(page, "Right Stick Lead", new Vector2(212f, -166f), new Vector2(122f, -140f), 3f, ink);
+
+            CreateDiagramText(page, "微调按键", new Vector2(-302f, -226f), new Vector2(142f, 32f), 18, FontStyle.Bold, TextAnchor.MiddleLeft, ink);
+            CreateDiagramLine(page, "Left Trim Lead", new Vector2(-220f, -224f), new Vector2(-118f, -202f), 3f, ink);
+            CreateDiagramText(page, "微调按键", new Vector2(302f, -226f), new Vector2(142f, 32f), 18, FontStyle.Bold, TextAnchor.MiddleRight, ink);
+            CreateDiagramLine(page, "Right Trim Lead", new Vector2(220f, -224f), new Vector2(118f, -202f), 3f, ink);
+            CreateDiagramText(page, "电源开关", new Vector2(292f, -262f), new Vector2(142f, 28f), 18, FontStyle.Bold, TextAnchor.MiddleRight, ink);
+            CreateDiagramLine(page, "Power Lead", new Vector2(214f, -252f), new Vector2(170f, -204f), 3f, ink);
+
+            Text footer = CreateDiagramText(page, "F2 打开手柄检测", new Vector2(0f, -266f), new Vector2(240f, 24f), 18, FontStyle.Bold, TextAnchor.MiddleCenter, paleInk);
+            footer.raycastTarget = false;
+            return root;
+        }
+
+        private static void CreateStick(Transform parent, string name, Vector2 anchoredPosition, string label, Color ink)
+        {
+            GameObject frame = CreateDiagramRect(parent, name + " Frame", anchoredPosition, new Vector2(100f, 82f), Color.clear, ink, 2f);
+            CreateDiagramText(frame.transform, "↑\n←  ●  →\n↓", new Vector2(0f, -2f), new Vector2(92f, 66f), 24, FontStyle.Bold, TextAnchor.MiddleCenter, ink);
+            CreateDiagramText(frame.transform, label, new Vector2(0f, -62f), new Vector2(118f, 24f), 13, FontStyle.Bold, TextAnchor.MiddleCenter, ink);
+        }
+
+        private static GameObject CreateDiagramRect(Transform parent, string objectName, Vector2 anchoredPosition, Vector2 size, Color fill, Color stroke, float strokeWidth)
+        {
+            GameObject rect = CreatePanel(parent, objectName, anchoredPosition, size, fill);
+            Image fillImage = rect.GetComponent<Image>();
+            fillImage.color = fill;
+
+            if (strokeWidth > 0f)
+            {
+                CreateDiagramRectLine(rect.transform, objectName + " Top", new Vector2(0f, size.y * 0.5f), new Vector2(size.x, strokeWidth), 0f, stroke);
+                CreateDiagramRectLine(rect.transform, objectName + " Bottom", new Vector2(0f, -size.y * 0.5f), new Vector2(size.x, strokeWidth), 0f, stroke);
+                CreateDiagramRectLine(rect.transform, objectName + " Left", new Vector2(-size.x * 0.5f, 0f), new Vector2(strokeWidth, size.y), 0f, stroke);
+                CreateDiagramRectLine(rect.transform, objectName + " Right", new Vector2(size.x * 0.5f, 0f), new Vector2(strokeWidth, size.y), 0f, stroke);
+            }
+
+            return rect;
+        }
+
+        private static Text CreateDiagramText(Transform parent, string textValue, Vector2 anchoredPosition, Vector2 size, int fontSize, FontStyle style, TextAnchor alignment, Color color)
+        {
+            Text text = CreateText(parent, "Diagram Text", anchoredPosition, size, fontSize, style, alignment);
+            text.text = textValue;
+            text.color = color;
+            return text;
+        }
+
+        private static void CreateDiagramLine(Transform parent, string objectName, Vector2 from, Vector2 to, float width, Color color)
+        {
+            Vector2 delta = to - from;
+            float length = delta.magnitude;
+            Vector2 center = from + delta * 0.5f;
+            GameObject line = CreatePanel(parent, objectName, center, new Vector2(length, Mathf.Max(1f, width)), color);
+            RectTransform rect = line.GetComponent<RectTransform>();
+            rect.localRotation = length > 0.001f
+                ? Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg)
+                : Quaternion.identity;
+        }
+
+        private static void CreateDiagramRectLine(Transform parent, string objectName, Vector2 anchoredPosition, Vector2 size, float rotationDegrees, Color color)
+        {
+            GameObject line = CreatePanel(parent, objectName, anchoredPosition, size, color);
+            line.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0f, 0f, rotationDegrees);
+        }
+
+#endif
 
         private static Text CreateText(Transform parent, string objectName, Vector2 anchoredPosition, Vector2 size, int fontSize, FontStyle style, TextAnchor alignment)
         {
@@ -1310,7 +1474,7 @@ namespace DroneMicroClass
                     $"检查点：0 / {RequiredCheckpointCount}\n" +
                     "计时：00:00\n" +
                     "分数：100\n" +
-                    "按住空格起飞，离地后开始计时。";
+                    "长按 S + D + ↓ + ← 解锁起飞，离地后开始计时。";
                 return;
             }
 
