@@ -200,6 +200,22 @@ namespace DroneMicroClass
             }
         }
 
+        public void RequestMotorLock()
+        {
+            if (!motorsArmed)
+            {
+                return;
+            }
+
+            if (!IsReadyForMotorCutoff())
+            {
+                RequestLanding();
+                return;
+            }
+
+            CompleteMotorShutdown();
+        }
+
         public void ResetMotion(bool resetPose)
         {
             if (body == null)
@@ -591,13 +607,23 @@ namespace DroneMicroClass
                 return;
             }
 
-            bool nearStartHeight = Altitude <= startPosition.y + landingMotorCutoffHeight;
-            bool slowEnough = Mathf.Abs(VerticalSpeed) <= landingMotorCutoffVerticalSpeed;
-            if (!nearStartHeight || !slowEnough)
+            if (!IsReadyForMotorCutoff())
             {
                 return;
             }
 
+            CompleteMotorShutdown();
+        }
+
+        private bool IsReadyForMotorCutoff()
+        {
+            bool nearStartHeight = Altitude <= startPosition.y + landingMotorCutoffHeight;
+            bool slowEnough = Mathf.Abs(VerticalSpeed) <= landingMotorCutoffVerticalSpeed;
+            return nearStartHeight && slowEnough;
+        }
+
+        private void CompleteMotorShutdown()
+        {
             landingActive = false;
             takeoffSequenceActive = false;
             motorsArmed = false;

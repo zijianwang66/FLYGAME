@@ -33,8 +33,8 @@ namespace DroneMicroClass
         [SerializeField] private KeyCode nextAircraftKey = KeyCode.Tab;
 
         [Header("Gimbal Pitch")]
-        [SerializeField] private KeyCode gimbalPitchUpKey = KeyCode.UpArrow;
-        [SerializeField] private KeyCode gimbalPitchDownKey = KeyCode.DownArrow;
+        [SerializeField] private KeyCode gimbalPitchUpKey = KeyCode.PageUp;
+        [SerializeField] private KeyCode gimbalPitchDownKey = KeyCode.PageDown;
         [SerializeField] private KeyCode gimbalCenterKey = KeyCode.B;
         [SerializeField, Min(1f)] private float gimbalPitchSpeed = 35f;
         [SerializeField, Range(-90f, 0f)] private float minimumGimbalPitch = -90f;
