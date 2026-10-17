@@ -151,44 +151,12 @@ InputManager:
     joyNum: 0
   - serializedVersion: 3
     m_Name: Drone Left Stick X
-    descriptiveName: Gamepad left stick horizontal roll
+    descriptiveName: Gamepad left stick horizontal yaw
     descriptiveNegativeName: 
     negativeButton: 
     positiveButton: 
     altNegativeButton: 
     altPositiveButton: 
-    gravity: 0
-    dead: 0.19
-    sensitivity: 1
-    snap: 0
-    invert: 0
-    type: 2
-    axis: 0
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: Drone Left Stick Y
-    descriptiveName: Gamepad left stick vertical pitch
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: 
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 0
-    dead: 0.19
-    sensitivity: 1
-    snap: 0
-    invert: 1
-    type: 2
-    axis: 1
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: Drone Right Stick X
-    descriptiveName: Gamepad right stick horizontal yaw
-    descriptiveNegativeName:
-    negativeButton:
-    positiveButton:
-    altNegativeButton:
-    altPositiveButton:
     gravity: 0
     dead: 0.19
     sensitivity: 1
@@ -198,8 +166,24 @@ InputManager:
     axis: 3
     joyNum: 0
   - serializedVersion: 3
-    m_Name: Drone Right Stick Y
-    descriptiveName: Gamepad right stick vertical throttle
+    m_Name: Drone Left Stick Y
+    descriptiveName: Gamepad left stick vertical throttle
+    descriptiveNegativeName: 
+    negativeButton: 
+    positiveButton: 
+    altNegativeButton: 
+    altPositiveButton: 
+    gravity: 0
+    dead: 0.19
+    sensitivity: 1
+    snap: 0
+    invert: 0
+    type: 2
+    axis: 2
+    joyNum: 0
+  - serializedVersion: 3
+    m_Name: Drone Right Stick X
+    descriptiveName: Gamepad right stick horizontal roll
     descriptiveNegativeName:
     negativeButton:
     positiveButton:
@@ -209,9 +193,25 @@ InputManager:
     dead: 0.19
     sensitivity: 1
     snap: 0
-    invert: 1
+    invert: 0
     type: 2
-    axis: 4
+    axis: 0
+    joyNum: 0
+  - serializedVersion: 3
+    m_Name: Drone Right Stick Y
+    descriptiveName: Gamepad right stick vertical pitch
+    descriptiveNegativeName:
+    negativeButton:
+    positiveButton:
+    altNegativeButton:
+    altPositiveButton:
+    gravity: 0
+    dead: 0.19
+    sensitivity: 1
+    snap: 0
+    invert: 0
+    type: 2
+    axis: 1
     joyNum: 0
   - serializedVersion: 3
     m_Name: Drone Raw Axis 1

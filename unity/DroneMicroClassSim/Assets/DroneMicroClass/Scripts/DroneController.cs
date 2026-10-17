@@ -5,6 +5,12 @@ namespace DroneMicroClass
 {
     public sealed class DroneController : MonoBehaviour
     {
+        private enum GamepadStickMode
+        {
+            Mode2American,
+            Mode1Japanese
+        }
+
         [SerializeField] private SimpleFlightController flightController;
         [SerializeField] private bool altitudeHold = true;
         [SerializeField] private bool stabilize = true;
@@ -27,10 +33,11 @@ namespace DroneMicroClass
 
         [Header("Gamepad")]
         [SerializeField] private bool gamepadEnabled = true;
-        [SerializeField] private string gamepadRollAxis = "Drone Left Stick X";
-        [SerializeField] private string gamepadPitchAxis = "Drone Left Stick Y";
-        [SerializeField] private string gamepadYawAxis = "Drone Right Stick X";
-        [SerializeField] private string gamepadVerticalAxis = "Drone Right Stick Y";
+        [SerializeField] private GamepadStickMode gamepadStickMode = GamepadStickMode.Mode2American;
+        [SerializeField] private string gamepadLeftStickXAxis = "Drone Left Stick X";
+        [SerializeField] private string gamepadLeftStickYAxis = "Drone Left Stick Y";
+        [SerializeField] private string gamepadRightStickXAxis = "Drone Right Stick X";
+        [SerializeField] private string gamepadRightStickYAxis = "Drone Right Stick Y";
         [SerializeField, Range(0f, 0.6f)] private float gamepadDeadZone = 0.18f;
         [SerializeField, Range(1f, 3f)] private float gamepadResponseCurve = 1.35f;
         [SerializeField, Range(0.1f, 1f)] private float stickComboThreshold = 0.72f;
@@ -87,10 +94,11 @@ namespace DroneMicroClass
             float keyboardYaw = BoolAxis(yawRightKey, yawLeftKey);
             float keyboardVertical = BoolAxis(ascendKey, descendKey);
 
-            float gamepadRoll = ReadGamepadAxis(gamepadRollAxis);
-            float gamepadPitch = ReadGamepadAxis(gamepadPitchAxis);
-            float gamepadYaw = ReadGamepadAxis(gamepadYawAxis);
-            float gamepadVertical = ReadGamepadAxis(gamepadVerticalAxis);
+            ReadGamepadSticks(
+                out float gamepadRoll,
+                out float gamepadPitch,
+                out float gamepadYaw,
+                out float gamepadVertical);
 
             UpdateKeyboardStickCombos(keyboardRoll, keyboardPitch, keyboardYaw, keyboardVertical);
             UpdateGamepadStickCombos(gamepadRoll, gamepadPitch, gamepadYaw, gamepadVertical);
@@ -224,6 +232,26 @@ namespace DroneMicroClass
         private bool GetGamepadButtonDown(KeyCode button)
         {
             return gamepadEnabled && Input.GetKeyDown(button);
+        }
+
+        private void ReadGamepadSticks(out float roll, out float pitch, out float yaw, out float vertical)
+        {
+            float leftX = ReadGamepadAxis(gamepadLeftStickXAxis);
+            float leftY = ReadGamepadAxis(gamepadLeftStickYAxis);
+            float rightX = ReadGamepadAxis(gamepadRightStickXAxis);
+            float rightY = ReadGamepadAxis(gamepadRightStickYAxis);
+
+            roll = rightX;
+            yaw = leftX;
+            if (gamepadStickMode == GamepadStickMode.Mode1Japanese)
+            {
+                pitch = leftY;
+                vertical = rightY;
+                return;
+            }
+
+            pitch = rightY;
+            vertical = leftY;
         }
 
         private float ReadGamepadAxis(string axisName)

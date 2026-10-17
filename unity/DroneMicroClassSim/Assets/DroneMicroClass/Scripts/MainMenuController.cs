@@ -7,7 +7,7 @@ namespace DroneMicroClass
 {
     public sealed class MainMenuController : MonoBehaviour
     {
-        [SerializeField] private string loadingSceneName = "Loading";
+        [SerializeField] private string trainingSceneSelectionName = "TrainingSceneSelection";
         [SerializeField] private GameObject scorePlaceholderPanel;
         [SerializeField] private Text scorePlaceholderText;
 
@@ -42,7 +42,7 @@ namespace DroneMicroClass
 
         public void StartSingleLevel()
         {
-            SceneManager.LoadScene(loadingSceneName);
+            SceneManager.LoadScene(trainingSceneSelectionName);
         }
 
         public void ReturnToLogin()
@@ -90,6 +90,12 @@ namespace DroneMicroClass
             RefreshScoreRecordsText();
         }
 
+        public void ExportScoreRecords()
+        {
+            string path = ScoreRecordStore.ExportCsv();
+            RefreshScoreRecordsText("已导出 CSV：" + path);
+        }
+
         public void Quit()
         {
             Application.Quit();
@@ -111,10 +117,11 @@ namespace DroneMicroClass
 
         private Canvas EnsureCanvas()
         {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
+            Canvas canvas = GetComponentInChildren<Canvas>(true);
             if (canvas == null)
             {
                 GameObject canvasObject = new GameObject("Main Menu Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+                canvasObject.transform.SetParent(transform, false);
                 canvas = canvasObject.GetComponent<Canvas>();
             }
 
@@ -130,6 +137,7 @@ namespace DroneMicroClass
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+            ResponsiveCanvasScaler.ApplyTo(canvas);
 
             if (canvas.GetComponent<GraphicRaycaster>() == null)
             {
@@ -185,7 +193,7 @@ namespace DroneMicroClass
                 logoRect.sizeDelta = new Vector2(68f, 68f);
             }
 
-            CreateText(parent, "青雲启飞", new Vector2(232f, -76f), new Vector2(440f, 54f), 42, FontStyle.Bold, TextAnchor.UpperLeft, ink, font);
+            CreateText(parent, "青霆启飞", new Vector2(232f, -76f), new Vector2(440f, 54f), 42, FontStyle.Bold, TextAnchor.UpperLeft, ink, font);
             CreateText(parent, "低空飞行训练模拟器", new Vector2(234f, -128f), new Vector2(500f, 36f), 22, FontStyle.Bold, TextAnchor.UpperLeft, new Color(0.08f, 0.38f, 0.68f, 0.95f), font);
             CreateText(parent, "LOW ALTITUDE FLIGHT TRAINING SIMULATOR", new Vector2(236f, -166f), new Vector2(560f, 24f), 14, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.12f, 0.48f, 0.86f, 0.76f), font);
             CreateText(parent, "模式选择", new Vector2(126f, -228f), new Vector2(360f, 62f), 44, FontStyle.Bold, TextAnchor.UpperLeft, ink, font);
@@ -392,11 +400,7 @@ namespace DroneMicroClass
                 return;
             }
 
-            Canvas canvas = FindFirstObjectByType<Canvas>();
-            if (canvas == null)
-            {
-                canvas = EnsureCanvas();
-            }
+            Canvas canvas = EnsureCanvas();
 
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             scoreRecordsPanel = CreatePanel(canvas.transform, "Score Records Panel", Vector2.zero, new Vector2(980f, 680f), new Color(0.94f, 0.985f, 1f, 0.96f));
@@ -409,36 +413,54 @@ namespace DroneMicroClass
             CreateText(scoreRecordsPanel.transform, "训练记录", new Vector2(0f, -34f), new Vector2(860f, 56f), 36, FontStyle.Bold, TextAnchor.UpperCenter, ink, font);
             scoreRecordsText = CreateText(scoreRecordsPanel.transform, "暂无训练记录。", new Vector2(56f, -114f), new Vector2(870f, 430f), 20, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.08f, 0.28f, 0.46f, 0.95f), font);
 
-            Button clearButton = CreateButton(scoreRecordsPanel.transform, "清空", new Vector2(-160f, -592f), new Vector2(220f, 62f), true);
+            Button clearButton = CreateButton(scoreRecordsPanel.transform, "清空", new Vector2(-260f, -592f), new Vector2(190f, 62f), true);
             clearButton.onClick.AddListener(ClearScoreRecords);
-            Button closeButton = CreateButton(scoreRecordsPanel.transform, "关闭", new Vector2(160f, -592f), new Vector2(220f, 62f), true);
+            Button exportButton = CreateButton(scoreRecordsPanel.transform, "导出CSV", new Vector2(0f, -592f), new Vector2(220f, 62f), true);
+            exportButton.onClick.AddListener(ExportScoreRecords);
+            Button closeButton = CreateButton(scoreRecordsPanel.transform, "关闭", new Vector2(270f, -592f), new Vector2(190f, 62f), true);
             closeButton.onClick.AddListener(HideScorePlaceholder);
 
             scoreRecordsPanel.SetActive(false);
         }
 
-        private void RefreshScoreRecordsText()
+        private void RefreshScoreRecordsText(string statusLine = null)
         {
             if (scoreRecordsText == null)
             {
                 return;
             }
 
+            LocalUserDatabase.UserRecord user = CurrentUserSession.GetUserOrDefault();
             ScoreRecordStore.ScoreRecord[] records = ScoreRecordStore.LoadRecent();
+            string scope = user != null && user.IsAdmin ? "全部用户" : "当前用户";
+            string userLine = user != null
+                ? $"当前账号：{user.Username}  姓名：{user.DisplayName}  班级：{user.ClassName}  权限：{user.Role}"
+                : "当前账号：未登录";
+
             if (records.Length == 0)
             {
-                scoreRecordsText.text = "暂无训练记录。\n完成一次训练后，记录会显示在这里。";
+                scoreRecordsText.text = userLine + "\n记录范围：" + scope + "\n暂无训练记录。\n完成一次训练后，记录会显示在这里。";
                 return;
             }
 
             System.Text.StringBuilder builder = new System.Text.StringBuilder();
-            builder.AppendLine("最近 10 条训练记录");
-            builder.AppendLine("排名  分数  等级  用时   碰撞  错误  高度  飞行器  时间");
+            builder.AppendLine(userLine);
+            builder.AppendLine("记录范围：" + scope + "，最近 10 条训练记录");
+            if (!string.IsNullOrWhiteSpace(statusLine))
+            {
+                builder.AppendLine(statusLine);
+            }
+
+            builder.AppendLine("排名  用户  场景  分数  等级  用时   碰撞  越界  高度  飞行器  时间");
             for (int i = 0; i < records.Length; i++)
             {
                 ScoreRecordStore.ScoreRecord record = records[i];
                 builder.Append(i + 1);
                 builder.Append(".    ");
+                builder.Append(string.IsNullOrWhiteSpace(record.displayName) ? record.username : record.displayName);
+                builder.Append("  ");
+                builder.Append(string.IsNullOrWhiteSpace(record.sceneName) ? "-" : record.sceneName);
+                builder.Append("  ");
                 builder.Append(record.score.ToString("000"));
                 builder.Append("    ");
                 builder.Append(record.grade);
@@ -447,7 +469,7 @@ namespace DroneMicroClass
                 builder.Append("   ");
                 builder.Append(record.collisions);
                 builder.Append("    ");
-                builder.Append(record.wrongCheckpointHits);
+                builder.Append(record.outOfCourseTicks);
                 builder.Append("      ");
                 builder.Append(record.unsafeAltitudeTicks);
                 builder.Append("    ");

@@ -11,7 +11,7 @@ namespace DroneMicroClass.Editor
         private const string LoginScenePath = SceneRoot + "/Login.unity";
         private const string MainMenuScenePath = SceneRoot + "/MainMenu.unity";
         private const string LoadingScenePath = SceneRoot + "/Loading.unity";
-        private const string LevelScenePath = SceneRoot + "/DroneFigureEightTrainingUnity.unity";
+        private const string LevelScenePath = SceneRoot + "/8字飞行.unity";
 
         [MenuItem("Drone MicroClass/Build Cyber Login Scene")]
         public static void BuildCyberLoginScene()

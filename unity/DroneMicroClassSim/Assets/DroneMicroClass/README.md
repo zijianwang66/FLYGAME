@@ -1,16 +1,17 @@
 # Drone MicroClass Simulator
 
-这是无人机微课堂仿真项目的第一版 MVP。
+无人机微课堂仿真项目，包含矩形、8 字、森林和学校训练场景。
 
 ## 打开方式
 
 使用 Unity 6000.3.8f1 打开：
 
-`K:/FileK/unityprojects/DroneMicroClassSim`
+将仓库中的 `unity/DroneMicroClassSim` 文件夹添加到 Unity Hub。
+克隆项目时需要 Git LFS，具体步骤见项目根目录的 `README.md`。
 
 主场景：
 
-`Assets/DroneMicroClass/Scenes/DroneFigureEightTrainingUnity.unity`
+`Assets/DroneMicroClass/Scenes/Login.unity`
 
 ## 操作
 
@@ -24,6 +25,8 @@
 - `H`：切换高度保持
 - `T`：切换姿态稳定
 - `Backspace`：重置无人机
+- `C / V`：循环切换视角
+- `G`：固定人高观察视角，离地 1.6 米，自动追踪并平滑变焦
 
 ## 已实现
 

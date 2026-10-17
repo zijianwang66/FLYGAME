@@ -65,15 +65,34 @@ namespace DroneMicroClass
 
         private void Awake()
         {
+            if (Active != null && Active != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             Active = this;
+            DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
         private void OnDestroy()
         {
             if (Active == this)
             {
+                SceneManager.sceneLoaded -= OnSceneLoaded;
                 Active = null;
             }
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (autoConfigureFromScene)
+            {
+                ConfigureForScene(scene.name);
+            }
+
+            UpdateWind(0f);
         }
 
         private void Update()
@@ -120,10 +139,19 @@ namespace DroneMicroClass
                 || normalizedName.Contains("assessment")
                 || normalizedName.Contains("考核");
 
-            bool isTrainingAssessment = normalizedName.Contains("figureeight")
+            bool isFigureEightTraining = normalizedName.Contains("figureeight")
                 || normalizedName.Contains("trainingunity")
-                || normalizedName.Contains("training");
-            ApplyPreset(isTrainingAssessment ? WindPreset.NoWind : normalizedName.Contains("forest") ? WindPreset.Moderate : WindPreset.Light);
+                || normalizedName.Contains("8字飞行")
+                || normalizedName.Contains("矩形飞行");
+
+            ApplyPreset(normalizedName.Contains("forest") ? WindPreset.Moderate : WindPreset.Light);
+            if (isFigureEightTraining)
+            {
+                averageWindSpeed = 0.2f;
+                gustStrength = 0.05f;
+                turbulenceFrequency = 0.08f;
+            }
+
             noiseSeed = 100f + Mathf.Abs(sceneName != null ? sceneName.GetHashCode() % 10000 : 0) * 0.01f;
         }
 

@@ -52,3 +52,9 @@ Unity-Skills-main/*
 
 # Local validation screenshots are not project source.
 [Aa]ssets/Screenshots.meta
+
+# Local Python caches and Unity crash-recovery scenes.
+__pycache__/
+*.py[cod]
+[Aa]ssets/_Recovery/
+[Aa]ssets/_Recovery.meta

@@ -118,6 +118,7 @@ namespace DroneMicroClass
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+            ResponsiveCanvasScaler.ApplyTo(canvas);
 
             panel = new GameObject("Diagnostics Panel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             panel.transform.SetParent(canvasObject.transform, false);
@@ -185,11 +186,11 @@ namespace DroneMicroClass
             }
 
             builder.AppendLine();
-            builder.AppendLine("常用映射:");
-            AppendAxis("左摇杆 横滚", "Drone Left Stick X");
-            AppendAxis("左摇杆 俯仰", "Drone Left Stick Y");
-            AppendAxis("右摇杆 偏航", "Drone Right Stick X");
-            AppendAxis("右摇杆 升降", "Drone Right Stick Y");
+            builder.AppendLine("常用映射 / Mode 2 美国手:");
+            AppendAxis("左摇杆左右 偏航", "Drone Left Stick X");
+            AppendAxis("左摇杆上下 油门", "Drone Left Stick Y");
+            AppendAxis("右摇杆左右 横滚", "Drone Right Stick X");
+            AppendAxis("右摇杆上下 俯仰", "Drone Right Stick Y");
 
             builder.AppendLine();
             builder.AppendLine("原始轴检测:");

@@ -7,6 +7,14 @@
 *.json text
 *.asmdef text
 *.asset text
+# Unity TerrainData files use binary serialization despite the .asset suffix.
+Assets/TerrainData_*.asset -text
+"Assets/New Terrain.asset" -text
+Assets/DroneMicroClass/Generated/SchoolFallbackTerrain.asset -text
+Assets/**/TerrainData_*.asset -text
+"Assets/**/New Terrain*.asset" -text
+Assets/**/LightingData.asset -text
+Assets/DroneMicroClass/Terrain/*.asset -text
 *.prefab text
 *.unity text
 *.mat text

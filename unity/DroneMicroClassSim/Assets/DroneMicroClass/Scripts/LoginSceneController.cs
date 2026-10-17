@@ -8,20 +8,37 @@ namespace DroneMicroClass
     public sealed class LoginSceneController : MonoBehaviour
     {
         [SerializeField] private string nextSceneName = "MainMenu";
-        [SerializeField] private string demoAccount = "pilot";
-        [SerializeField] private string demoPassword = "123456";
 
         private readonly System.Collections.Generic.List<ShardParticle> shards = new System.Collections.Generic.List<ShardParticle>();
+        private GameObject loginPanel;
+        private GameObject registrationPanel;
+        private GameObject activationPanel;
         private InputField accountInput;
         private InputField passwordInput;
+        private InputField activationCodeInput;
+        private InputField registerAccountInput;
+        private InputField registerPasswordInput;
+        private InputField registerDisplayNameInput;
+        private InputField registerClassInput;
         private Text statusText;
+        private Text activationStatusText;
+        private Text registerStatusText;
         private RectTransform aircraftRoot;
+        private Transform lightningFxRoot;
         private Vector2 aircraftBasePosition;
         private float loginStartTime;
+        private float registrationFxStartedAt = -10f;
+        private float loginPanelFxStartedAt = -10f;
+        private float activationSuccessAt = -10f;
         private bool isLoggingIn;
+        private bool activationCompleted;
+        private bool pendingRegistrationPanel;
+        private bool pendingLoginPanelReturn;
 
         private void Awake()
         {
+            LocalUserDatabase.EnsureInitialized();
+            CurrentUserSession.Clear();
             EnsureSceneCamera();
             EnsureEventSystem();
             BuildLoginUi();
@@ -32,9 +49,26 @@ namespace DroneMicroClass
             AnimateAircraftShowcase();
             AnimateBrokenParticles();
 
+            if (pendingRegistrationPanel && Time.time - registrationFxStartedAt > 0.28f)
+            {
+                pendingRegistrationPanel = false;
+                ShowRegistrationPanel();
+            }
+
+            if (pendingLoginPanelReturn && Time.time - loginPanelFxStartedAt > 0.22f)
+            {
+                pendingLoginPanelReturn = false;
+                ShowLoginPanel();
+            }
+
             if (isLoggingIn && Time.time - loginStartTime > 0.85f)
             {
                 SceneManager.LoadScene(nextSceneName);
+            }
+
+            if (activationCompleted && Time.time - activationSuccessAt > 0.65f)
+            {
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
             }
         }
 
@@ -46,7 +80,14 @@ namespace DroneMicroClass
             CreateBackground(canvas.transform);
             CreateAircraftShowcase(canvas.transform, font);
             CreateBrandLockup(canvas.transform, font);
-            CreateLoginPanel(canvas.transform, font);
+            if (ActivationManager.IsActivated())
+            {
+                CreateLoginPanel(canvas.transform, font);
+            }
+            else
+            {
+                CreateActivationPanel(canvas.transform, font);
+            }
         }
 
         private void CreateBackground(Transform parent)
@@ -127,7 +168,7 @@ namespace DroneMicroClass
         {
             CreateLoginShadow(parent);
 
-            GameObject loginPanel = CreatePanel(parent, "Login Glass Panel", Vector2.zero, new Vector2(650f, 390f), new Color(1f, 1f, 1f, 0.9f));
+            loginPanel = CreatePanel(parent, "Login Glass Panel", Vector2.zero, new Vector2(650f, 390f), new Color(1f, 1f, 1f, 0.9f));
             RectTransform loginRect = loginPanel.GetComponent<RectTransform>();
             loginRect.anchorMin = new Vector2(0f, 0.5f);
             loginRect.anchorMax = loginRect.anchorMin;
@@ -142,17 +183,91 @@ namespace DroneMicroClass
             accountInput = CreateInput(loginPanel.transform, "\u98de\u624b\u8d26\u53f7", "\u8bf7\u8f93\u5165\u8d26\u53f7", new Vector2(38f, -126f), new Vector2(270f, 52f), font, false);
             passwordInput = CreateInput(loginPanel.transform, "\u8bbf\u95ee\u5bc6\u7801", "\u8bf7\u8f93\u5165\u5bc6\u7801", new Vector2(342f, -126f), new Vector2(270f, 52f), font, true);
 
-            Toggle rememberToggle = CreateToggle(loginPanel.transform, "\u8bb0\u4f4f\u98de\u624b", new Vector2(38f, -214f), font);
-            rememberToggle.isOn = true;
-            CreateText(loginPanel.transform, "\u672c\u5730\u6f14\u793a\u8d26\u53f7: pilot / 123456", new Vector2(-38f, -212f), new Vector2(280f, 28f), 16, FontStyle.Normal, TextAnchor.UpperRight, new Color(0.08f, 0.45f, 0.9f, 0.76f), font);
+            CreateText(loginPanel.transform, "\u9ed8\u8ba4\u8d26\u53f7: pilot / 123456", new Vector2(38f, -212f), new Vector2(280f, 28f), 16, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.08f, 0.45f, 0.9f, 0.76f), font);
 
             Button loginButton = CreateButton(loginPanel.transform, "\u542f\u52a8\u8bad\u7ec3\u8231", new Vector2(38f, -256f), new Vector2(270f, 56f), font);
-            loginButton.onClick.AddListener(SubmitLogin);
+            RectTransform loginButtonRect = loginButton.GetComponent<RectTransform>();
+            loginButton.onClick.AddListener(() =>
+            {
+                PlayButtonLightning(loginButtonRect);
+                SubmitLogin();
+            });
 
-            Button exitButton = CreateButton(loginPanel.transform, "\u9000\u51fa\u7cfb\u7edf", new Vector2(342f, -256f), new Vector2(270f, 56f), font);
-            exitButton.onClick.AddListener(Application.Quit);
+            Button registerButton = CreateButton(loginPanel.transform, "\u6ce8\u518c\u8d26\u53f7", new Vector2(342f, -256f), new Vector2(270f, 56f), font);
+            RectTransform registerButtonRect = registerButton.GetComponent<RectTransform>();
+            registerButton.onClick.AddListener(() => PlayRegistrationLightning(registerButtonRect));
 
-            statusText = CreateText(loginPanel.transform, "\u7cfb\u7edf\u72b6\u6001: \u8bad\u7ec3\u7f51\u7edc\u5f85\u547d    \u98de\u63a7\u534f\u8bae: \u672c\u5730\u6f14\u793a\u6a21\u5f0f", new Vector2(38f, -336f), new Vector2(574f, 28f), 15, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.12f, 0.48f, 0.86f, 0.78f), font);
+            statusText = CreateText(loginPanel.transform, "\u7cfb\u7edf\u72b6\u6001: \u672c\u5730\u7528\u6237\u6570\u636e\u5e93\u5df2\u5c31\u7eea    \u98de\u63a7\u534f\u8bae: \u5355\u673a\u8bad\u7ec3\u6a21\u5f0f", new Vector2(38f, -336f), new Vector2(574f, 28f), 15, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.12f, 0.48f, 0.86f, 0.78f), font);
+            CreateRegistrationPanel(parent, font);
+        }
+
+        private void CreateActivationPanel(Transform parent, Font font)
+        {
+            CreateLoginShadow(parent);
+
+            activationPanel = CreatePanel(parent, "Activation Panel", Vector2.zero, new Vector2(650f, 430f), new Color(1f, 1f, 1f, 0.94f));
+            RectTransform activationRect = activationPanel.GetComponent<RectTransform>();
+            activationRect.anchorMin = new Vector2(0f, 0.5f);
+            activationRect.anchorMax = activationRect.anchorMin;
+            activationRect.pivot = new Vector2(0f, 0.5f);
+            activationRect.anchoredPosition = new Vector2(126f, -110f);
+            AddOutline(activationPanel, new Color(0.18f, 0.52f, 0.96f, 0.42f));
+            CreateBrokenParticles(parent);
+
+            CreateText(activationPanel.transform, "\u8bbe\u5907\u6fc0\u6d3b", new Vector2(38f, -28f), new Vector2(220f, 42f), 28, FontStyle.Bold, TextAnchor.UpperLeft, new Color(0.04f, 0.22f, 0.42f, 1f), font);
+            CreateText(activationPanel.transform, "\u8bf7\u5c06\u672c\u673a\u673a\u5668\u7801\u53d1\u7ed9\u7ba1\u7406\u5458\uff0c\u83b7\u53d6\u5bf9\u5e94\u6fc0\u6d3b\u7801\u540e\u624d\u80fd\u8fdb\u5165\u7cfb\u7edf\u3002", new Vector2(38f, -70f), new Vector2(574f, 48f), 17, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.16f, 0.42f, 0.68f, 0.86f), font);
+
+            CreateText(activationPanel.transform, "\u672c\u673a\u673a\u5668\u7801", new Vector2(38f, -132f), new Vector2(220f, 24f), 15, FontStyle.Bold, TextAnchor.UpperLeft, new Color(0.1f, 0.36f, 0.64f, 0.92f), font);
+            Text machineCodeText = CreateText(activationPanel.transform, ActivationManager.MachineCode, new Vector2(38f, -162f), new Vector2(400f, 40f), 22, FontStyle.Bold, TextAnchor.MiddleLeft, new Color(0.04f, 0.18f, 0.34f, 1f), font);
+            AddOutline(machineCodeText.gameObject, new Color(0.2f, 0.56f, 1f, 0.18f));
+
+            Button copyButton = CreateButton(activationPanel.transform, "\u590d\u5236\u673a\u5668\u7801", new Vector2(462f, -154f), new Vector2(150f, 48f), font);
+            copyButton.onClick.AddListener(() =>
+            {
+                GUIUtility.systemCopyBuffer = ActivationManager.MachineCode;
+                SetActivationStatus("\u673a\u5668\u7801\u5df2\u590d\u5236\uff0c\u8bf7\u53d1\u7ed9\u7ba1\u7406\u5458\u751f\u6210\u6fc0\u6d3b\u7801\u3002");
+            });
+
+            activationCodeInput = CreateInput(activationPanel.transform, "\u6fc0\u6d3b\u7801", "\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u63d0\u4f9b\u7684\u6fc0\u6d3b\u7801", new Vector2(38f, -244f), new Vector2(574f, 52f), font, false);
+
+            Button activateButton = CreateButton(activationPanel.transform, "\u6fc0\u6d3b\u5e76\u8fdb\u5165", new Vector2(38f, -334f), new Vector2(574f, 56f), font);
+            activateButton.onClick.AddListener(SubmitActivation);
+
+            activationStatusText = CreateText(activationPanel.transform, "\u672a\u6fc0\u6d3b\uff1a\u672c\u6b21\u5b89\u88c5\u9700\u8981\u4e00\u673a\u4e00\u7801\u3002", new Vector2(38f, -398f), new Vector2(574f, 28f), 15, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.12f, 0.48f, 0.86f, 0.78f), font);
+        }
+
+        private void CreateRegistrationPanel(Transform parent, Font font)
+        {
+            registrationPanel = CreatePanel(parent, "Registration Glass Panel", Vector2.zero, new Vector2(650f, 470f), new Color(1f, 1f, 1f, 0.94f));
+            RectTransform registerRect = registrationPanel.GetComponent<RectTransform>();
+            registerRect.anchorMin = new Vector2(0f, 0.5f);
+            registerRect.anchorMax = registerRect.anchorMin;
+            registerRect.pivot = new Vector2(0f, 0.5f);
+            registerRect.anchoredPosition = new Vector2(126f, -110f);
+            AddOutline(registrationPanel, new Color(0.18f, 0.52f, 0.96f, 0.42f));
+
+            CreateText(registrationPanel.transform, "\u6ce8\u518c\u5b66\u5458\u8d26\u53f7", new Vector2(38f, -28f), new Vector2(260f, 42f), 28, FontStyle.Bold, TextAnchor.UpperLeft, new Color(0.04f, 0.22f, 0.42f, 1f), font);
+            CreateText(registrationPanel.transform, "\u8d26\u53f7\u4fdd\u5b58\u5728\u672c\u673a SQLite \u6570\u636e\u5e93\uff0c\u6bcf\u53f0\u8bbe\u5907\u72ec\u7acb\u4f7f\u7528\u3002", new Vector2(38f, -70f), new Vector2(560f, 32f), 17, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.16f, 0.42f, 0.68f, 0.86f), font);
+
+            registerAccountInput = CreateInput(registrationPanel.transform, "\u767b\u5f55\u8d26\u53f7", "\u81f3\u5c11 3 \u4f4d\uff0c\u4e0d\u8981\u7a7a\u683c", new Vector2(38f, -126f), new Vector2(270f, 52f), font, false);
+            registerDisplayNameInput = CreateInput(registrationPanel.transform, "\u5b66\u5458\u59d3\u540d", "\u8bf7\u8f93\u5165\u59d3\u540d", new Vector2(342f, -126f), new Vector2(270f, 52f), font, false);
+            registerClassInput = CreateInput(registrationPanel.transform, "\u73ed\u7ea7 / \u673a\u53f7", "\u4f8b\u5982\uff1a\u4e00\u73ed", new Vector2(38f, -222f), new Vector2(270f, 52f), font, false);
+            registerPasswordInput = CreateInput(registrationPanel.transform, "\u8bbf\u95ee\u5bc6\u7801", "\u81f3\u5c11 6 \u4f4d", new Vector2(342f, -222f), new Vector2(270f, 52f), font, true);
+
+            Button createButton = CreateButton(registrationPanel.transform, "\u521b\u5efa\u5e76\u8fdb\u5165", new Vector2(38f, -328f), new Vector2(270f, 56f), font);
+            RectTransform createButtonRect = createButton.GetComponent<RectTransform>();
+            createButton.onClick.AddListener(() =>
+            {
+                PlayButtonLightning(createButtonRect);
+                SubmitRegistration();
+            });
+
+            Button backButton = CreateButton(registrationPanel.transform, "\u8fd4\u56de\u767b\u5f55", new Vector2(342f, -328f), new Vector2(270f, 56f), font);
+            RectTransform backButtonRect = backButton.GetComponent<RectTransform>();
+            backButton.onClick.AddListener(() => PlayReturnLightning(backButtonRect));
+
+            registerStatusText = CreateText(registrationPanel.transform, "\u6ce8\u518c\u540e\u5c06\u4ee5\u666e\u901a\u5b66\u5458\u8eab\u4efd\u8fdb\u5165\u7cfb\u7edf\u3002", new Vector2(38f, -408f), new Vector2(574f, 28f), 15, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.12f, 0.48f, 0.86f, 0.78f), font);
+            registrationPanel.SetActive(false);
         }
 
         private void CreateLoginShadow(Transform parent)
@@ -285,6 +400,118 @@ namespace DroneMicroClass
             }
         }
 
+        private void PlayRegistrationLightning(RectTransform sourceRect)
+        {
+            if (pendingRegistrationPanel || isLoggingIn)
+            {
+                return;
+            }
+
+            pendingRegistrationPanel = true;
+            registrationFxStartedAt = Time.time;
+            SetStatus("\u6ce8\u518c\u901a\u9053\u6fc0\u6d3b\uff1a\u6b63\u5728\u6253\u5f00\u672c\u673a\u5b66\u5458\u6ce8\u518c...");
+            CreateLightningBurst(loginPanel != null ? loginPanel.transform : transform, GetRectCenter(sourceRect));
+        }
+
+        private void PlayReturnLightning(RectTransform sourceRect)
+        {
+            if (pendingLoginPanelReturn || isLoggingIn)
+            {
+                return;
+            }
+
+            pendingLoginPanelReturn = true;
+            loginPanelFxStartedAt = Time.time;
+            PlayButtonLightning(sourceRect);
+        }
+
+        private void PlayButtonLightning(RectTransform sourceRect)
+        {
+            Transform parent = sourceRect != null && sourceRect.parent != null ? sourceRect.parent : transform;
+            CreateLightningBurst(parent, GetRectCenter(sourceRect));
+        }
+
+        private static Vector2 GetRectCenter(RectTransform rect)
+        {
+            if (rect == null)
+            {
+                return new Vector2(476f, -284f);
+            }
+
+            return rect.anchoredPosition + new Vector2(rect.sizeDelta.x * 0.5f, -rect.sizeDelta.y * 0.5f);
+        }
+
+        private void CreateLightningBurst(Transform parent, Vector2 origin)
+        {
+            if (parent == null)
+            {
+                return;
+            }
+
+            if (lightningFxRoot != null)
+            {
+                Destroy(lightningFxRoot.gameObject);
+            }
+
+            GameObject root = new GameObject("Transparent Lightning FX", typeof(RectTransform), typeof(CanvasGroup));
+            root.transform.SetParent(parent, false);
+            lightningFxRoot = root.transform;
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = Vector2.zero;
+            rootRect.anchorMax = Vector2.one;
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
+            rootRect.offsetMin = Vector2.zero;
+            rootRect.offsetMax = Vector2.zero;
+            CanvasGroup canvasGroup = root.GetComponent<CanvasGroup>();
+            canvasGroup.alpha = 0.74f;
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
+            root.transform.SetAsLastSibling();
+
+            Vector2[] points =
+            {
+                origin,
+                origin + new Vector2(-26f, -16f),
+                origin + new Vector2(16f, -30f),
+                origin + new Vector2(-8f, -54f),
+                origin + new Vector2(44f, -36f)
+            };
+
+            for (int i = 0; i < points.Length - 1; i++)
+            {
+                CreateLightningSegment(root.transform, points[i], points[i + 1], 6f - i, new Color(0.15f, 0.76f, 1f, 0.58f));
+            }
+
+            for (int i = 0; i < 12; i++)
+            {
+                float angle = i * 30f * Mathf.Deg2Rad;
+                float radius = 20f + (i % 4) * 7f;
+                Vector2 position = origin + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                GameObject spark = CreateLightningVisual(root.transform, "Lightning Spark", position, new Vector2(8f + i % 3 * 3f, 8f + i % 2 * 4f), new Color(0.1f, 0.68f, 1f, 0.42f));
+                spark.AddComponent<LightningFade>().Configure(0.42f + i * 0.015f, 28f + i * 2f);
+            }
+
+            root.AddComponent<LightningFade>().Configure(0.55f, 0f);
+        }
+
+        private static void CreateLightningSegment(Transform parent, Vector2 from, Vector2 to, float width, Color color)
+        {
+            Vector2 delta = to - from;
+            float length = delta.magnitude;
+            GameObject line = CreateLightningVisual(parent, "Lightning Segment", from + delta * 0.5f, new Vector2(length, Mathf.Max(2f, width)), color);
+            RectTransform rect = line.GetComponent<RectTransform>();
+            rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
+            line.AddComponent<LightningFade>().Configure(0.5f, 18f);
+        }
+
+        private static GameObject CreateLightningVisual(Transform parent, string objectName, Vector2 position, Vector2 size, Color color)
+        {
+            GameObject visual = CreatePanel(parent, objectName, position, size, color);
+            Image image = visual.GetComponent<Image>();
+            image.raycastTarget = false;
+            return visual;
+        }
+
         private void AnimateBrokenParticles()
         {
             for (int i = 0; i < shards.Count; i++)
@@ -327,12 +554,25 @@ namespace DroneMicroClass
             aircraftRoot.localScale = new Vector3(scale, scale, 1f);
         }
 
+        private void SubmitActivation()
+        {
+            string activationCode = activationCodeInput != null ? activationCodeInput.text : string.Empty;
+            if (!ActivationManager.TryActivate(activationCode, out string message))
+            {
+                SetActivationStatus(message);
+                return;
+            }
+
+            SetActivationStatus(message);
+            activationCompleted = true;
+            activationSuccessAt = Time.time;
+        }
+
         private void SubmitLogin()
         {
             string account = accountInput != null ? accountInput.text.Trim() : string.Empty;
             string password = passwordInput != null ? passwordInput.text : string.Empty;
             bool emptyInput = string.IsNullOrEmpty(account) || string.IsNullOrEmpty(password);
-            bool demoMismatch = !emptyInput && (account != demoAccount || password != demoPassword);
 
             if (emptyInput)
             {
@@ -340,15 +580,67 @@ namespace DroneMicroClass
                 return;
             }
 
-            if (demoMismatch)
+            if (!LocalUserDatabase.Authenticate(account, password, out LocalUserDatabase.UserRecord user))
             {
-                SetStatus("\u672c\u5730\u6f14\u793a\u8d26\u53f7: pilot / 123456");
+                SetStatus("\u8eab\u4efd\u9a8c\u8bc1\u5931\u8d25: \u8d26\u53f7\u6216\u5bc6\u7801\u4e0d\u6b63\u786e\u3002");
                 return;
             }
 
-            SetStatus("\u9a8c\u8bc1\u901a\u8fc7\uff0c\u8bad\u7ec3\u8231\u5df2\u5c31\u7eea\u3002\u6b63\u5728\u52a0\u8f7d\u822a\u7ebf...");
+            CurrentUserSession.SetUser(user);
+            string displayName = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Username : user.DisplayName;
+            SetStatus("\u9a8c\u8bc1\u901a\u8fc7: " + displayName + "\uff0c\u8bad\u7ec3\u8231\u5df2\u5c31\u7eea\u3002\u6b63\u5728\u52a0\u8f7d\u822a\u7ebf...");
             isLoggingIn = true;
             loginStartTime = Time.time;
+        }
+
+        private void SubmitRegistration()
+        {
+            string account = registerAccountInput != null ? registerAccountInput.text.Trim() : string.Empty;
+            string password = registerPasswordInput != null ? registerPasswordInput.text : string.Empty;
+            string displayName = registerDisplayNameInput != null ? registerDisplayNameInput.text.Trim() : string.Empty;
+            string className = registerClassInput != null ? registerClassInput.text.Trim() : string.Empty;
+
+            if (!LocalUserDatabase.RegisterStudent(account, password, displayName, className, out LocalUserDatabase.UserRecord user, out string message))
+            {
+                SetRegisterStatus("\u6ce8\u518c\u5931\u8d25: " + message);
+                return;
+            }
+
+            CurrentUserSession.SetUser(user);
+            string name = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Username : user.DisplayName;
+            SetRegisterStatus("\u6ce8\u518c\u6210\u529f: " + name + "\uff0c\u6b63\u5728\u8fdb\u5165\u7cfb\u7edf...");
+            isLoggingIn = true;
+            loginStartTime = Time.time;
+        }
+
+        private void ShowRegistrationPanel()
+        {
+            if (loginPanel != null)
+            {
+                loginPanel.SetActive(false);
+            }
+
+            if (registrationPanel != null)
+            {
+                registrationPanel.SetActive(true);
+            }
+
+            SetRegisterStatus("\u6ce8\u518c\u540e\u5c06\u4ee5\u666e\u901a\u5b66\u5458\u8eab\u4efd\u8fdb\u5165\u7cfb\u7edf\u3002");
+        }
+
+        private void ShowLoginPanel()
+        {
+            if (registrationPanel != null)
+            {
+                registrationPanel.SetActive(false);
+            }
+
+            if (loginPanel != null)
+            {
+                loginPanel.SetActive(true);
+            }
+
+            SetStatus("\u7cfb\u7edf\u72b6\u6001: \u672c\u5730\u7528\u6237\u6570\u636e\u5e93\u5df2\u5c31\u7eea    \u98de\u63a7\u534f\u8bae: \u5355\u673a\u8bad\u7ec3\u6a21\u5f0f");
         }
 
         private void SetStatus(string message)
@@ -356,6 +648,22 @@ namespace DroneMicroClass
             if (statusText != null)
             {
                 statusText.text = message;
+            }
+        }
+
+        private void SetActivationStatus(string message)
+        {
+            if (activationStatusText != null)
+            {
+                activationStatusText.text = message;
+            }
+        }
+
+        private void SetRegisterStatus(string message)
+        {
+            if (registerStatusText != null)
+            {
+                registerStatusText.text = message;
             }
         }
 
@@ -370,6 +678,7 @@ namespace DroneMicroClass
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+            ResponsiveCanvasScaler.ApplyTo(canvas);
             return canvas;
         }
 
@@ -544,6 +853,51 @@ namespace DroneMicroClass
             public Color BaseColor;
             public float Phase;
             public float Drift;
+        }
+
+        private sealed class LightningFade : MonoBehaviour
+        {
+            private RectTransform rect;
+            private Graphic graphic;
+            private Color baseColor;
+            private float duration = 0.5f;
+            private float driftSpeed;
+            private float startedAt;
+
+            public void Configure(float effectDuration, float upwardDrift)
+            {
+                rect = GetComponent<RectTransform>();
+                graphic = GetComponent<Graphic>();
+                if (graphic != null)
+                {
+                    baseColor = graphic.color;
+                }
+
+                duration = Mathf.Max(0.05f, effectDuration);
+                driftSpeed = upwardDrift;
+                startedAt = Time.time;
+            }
+
+            private void Update()
+            {
+                float progress = Mathf.Clamp01((Time.time - startedAt) / duration);
+                if (graphic != null)
+                {
+                    graphic.color = new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * (1f - progress));
+                }
+
+                if (rect != null && driftSpeed > 0f)
+                {
+                    rect.anchoredPosition += Vector2.up * driftSpeed * Time.deltaTime;
+                    float scale = 1f + progress * 0.28f;
+                    rect.localScale = new Vector3(scale, scale, 1f);
+                }
+
+                if (progress >= 1f)
+                {
+                    Destroy(gameObject);
+                }
+            }
         }
     }
 }

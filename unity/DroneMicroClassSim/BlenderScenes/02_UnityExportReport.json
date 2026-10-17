@@ -1,0 +1,269 @@
+{
+  "sourceBlend": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\BlenderScenes\\02.blend",
+  "outputFbx": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Models\\UrbanBuildings\\02_Corrected.fbx",
+  "exportObjectCount": 9095,
+  "meshCount": 4376,
+  "emptyCount": 4719,
+  "materialCount": 25,
+  "textures": [
+    {
+      "image": "bark.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\bark.jpg",
+      "exists": true,
+      "bytes": 233158
+    },
+    {
+      "image": "branch-01.png",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\branch-01.png",
+      "exists": true,
+      "bytes": 594694
+    },
+    {
+      "image": "branch-02.png",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\branch-02.png",
+      "exists": true,
+      "bytes": 863104
+    },
+    {
+      "image": "branch-1-01.png",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\branch-1-01.png",
+      "exists": true,
+      "bytes": 921313
+    },
+    {
+      "image": "branch-1-02.png",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\branch-1-02.png",
+      "exists": true,
+      "bytes": 933233
+    },
+    {
+      "image": "branch-2-01.png",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\branch-2-01.png",
+      "exists": true,
+      "bytes": 864090
+    },
+    {
+      "image": "branch-2-02.png",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\branch-2-02.png",
+      "exists": true,
+      "bytes": 955729
+    },
+    {
+      "image": "Mat3d66_1014492_10_4725.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\Mat3d66_1014492_10_4725.jpg",
+      "exists": true,
+      "bytes": 7813
+    },
+    {
+      "image": "Mat3d66_1014492_15_617.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\Mat3d66_1014492_15_617.jpg",
+      "exists": true,
+      "bytes": 166825
+    },
+    {
+      "image": "Mat3d66_1014492_16_3068.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\Mat3d66_1014492_16_3068.jpg",
+      "exists": true,
+      "bytes": 39855
+    },
+    {
+      "image": "Mat3d66_1014492_16_3068_1.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\Mat3d66_1014492_16_3068_1.jpg",
+      "exists": true,
+      "bytes": 1022
+    },
+    {
+      "image": "Mat3d66_1014492_17_4052.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\Mat3d66_1014492_17_4052.jpg",
+      "exists": true,
+      "bytes": 166326
+    },
+    {
+      "image": "Mat3d66_1014492_18_4928.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\Mat3d66_1014492_18_4928.jpg",
+      "exists": true,
+      "bytes": 182577
+    },
+    {
+      "image": "Mat3d66_1014492_6_4698.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\Mat3d66_1014492_6_4698.jpg",
+      "exists": true,
+      "bytes": 72086
+    },
+    {
+      "image": "Mat3d66_1014492_7_4547.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\Mat3d66_1014492_7_4547.jpg",
+      "exists": true,
+      "bytes": 19788
+    },
+    {
+      "image": "Mat3d66_1014492_8_5461.jpg",
+      "path": "K:\\FileK\\unityprojects\\DroneMicroClassSim\\Assets\\DroneMicroClass\\Textures\\Urban02\\Mat3d66_1014492_8_5461.jpg",
+      "exists": true,
+      "bytes": 39402
+    }
+  ],
+  "materials": [
+    {
+      "material": "branch-01",
+      "imageTextures": [
+        "branch-2-01.png"
+      ],
+      "hasLinkedAlpha": true
+    },
+    {
+      "material": "branch-02",
+      "imageTextures": [
+        "branch-2-02.png"
+      ],
+      "hasLinkedAlpha": true
+    },
+    {
+      "material": "branch-1-01",
+      "imageTextures": [
+        "branch-01.png"
+      ],
+      "hasLinkedAlpha": true
+    },
+    {
+      "material": "branch-1-02",
+      "imageTextures": [
+        "branch-02.png"
+      ],
+      "hasLinkedAlpha": true
+    },
+    {
+      "material": "branch-2-01",
+      "imageTextures": [
+        "branch-1-01.png"
+      ],
+      "hasLinkedAlpha": true
+    },
+    {
+      "material": "branch-2-02",
+      "imageTextures": [
+        "branch-1-02.png"
+      ],
+      "hasLinkedAlpha": true
+    },
+    {
+      "material": "M_00dx___",
+      "imageTextures": [],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_10_4725",
+      "imageTextures": [
+        "Mat3d66_1014492_10_4725.jpg"
+      ],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_11_7686",
+      "imageTextures": [],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_13_9410",
+      "imageTextures": [],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_15_617",
+      "imageTextures": [
+        "Mat3d66_1014492_15_617.jpg"
+      ],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_16_3068",
+      "imageTextures": [
+        "Mat3d66_1014492_16_3068.jpg"
+      ],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_16_3068_1",
+      "imageTextures": [
+        "Mat3d66_1014492_16_3068_1.jpg"
+      ],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_17_4052",
+      "imageTextures": [
+        "Mat3d66_1014492_17_4052.jpg"
+      ],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_18_4928",
+      "imageTextures": [
+        "Mat3d66_1014492_18_4928.jpg"
+      ],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_2_2579",
+      "imageTextures": [],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_3_9603",
+      "imageTextures": [],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_4_6399",
+      "imageTextures": [],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_5_2382",
+      "imageTextures": [],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_6_4698",
+      "imageTextures": [
+        "Mat3d66_1014492_6_4698.jpg"
+      ],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_7_4547",
+      "imageTextures": [
+        "Mat3d66_1014492_7_4547.jpg"
+      ],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_8_5461",
+      "imageTextures": [
+        "Mat3d66_1014492_8_5461.jpg"
+      ],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "Mat3d66_1014492_9_7471",
+      "imageTextures": [],
+      "hasLinkedAlpha": false
+    },
+    {
+      "material": "trunk-01",
+      "imageTextures": [
+        "bark.jpg"
+      ],
+      "hasLinkedAlpha": false
+    }
+  ],
+  "fbxBytes": 34337564,
+  "settings": {
+    "axisForward": "-Z",
+    "axisUp": "Y",
+    "applyUnitScale": true,
+    "applyModifiers": false,
+    "pathMode": "COPY",
+    "embedTextures": true
+  }
+}

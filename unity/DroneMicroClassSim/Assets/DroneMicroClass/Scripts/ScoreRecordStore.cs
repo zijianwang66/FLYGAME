@@ -1,16 +1,19 @@
 using System;
-using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DroneMicroClass
 {
     public static class ScoreRecordStore
     {
-        private const string PlayerPrefsKey = "DroneMicroClass.ScoreRecords.v1";
         private const int MaxRecords = 10;
 
         [Serializable]
         public sealed class ScoreRecord
         {
+            public string username;
+            public string displayName;
+            public string className;
+            public string sceneName;
             public int score;
             public string grade;
             public float completionTimeSeconds;
@@ -22,29 +25,44 @@ namespace DroneMicroClass
             public string recordedAt;
         }
 
-        [Serializable]
-        private sealed class ScoreRecordCollection
-        {
-            public ScoreRecord[] records = Array.Empty<ScoreRecord>();
-        }
-
         public static ScoreRecord[] LoadRecent()
         {
-            string json = PlayerPrefs.GetString(PlayerPrefsKey, string.Empty);
-            if (string.IsNullOrWhiteSpace(json))
+            LocalUserDatabase.UserRecord user = CurrentUserSession.GetUserOrDefault();
+            if (user == null)
             {
                 return Array.Empty<ScoreRecord>();
             }
 
-            try
-            {
-                ScoreRecordCollection collection = JsonUtility.FromJson<ScoreRecordCollection>(json);
-                return collection?.records ?? Array.Empty<ScoreRecord>();
-            }
-            catch (ArgumentException)
+            LocalUserDatabase.TrainingRecord[] records = user.IsAdmin
+                ? LocalUserDatabase.LoadRecentAll(MaxRecords)
+                : LocalUserDatabase.LoadRecentForUser(user.Id, MaxRecords);
+
+            return ConvertRecords(records);
+        }
+
+        public static ScoreRecord[] LoadCurrentUserRecent()
+        {
+            LocalUserDatabase.UserRecord user = CurrentUserSession.GetUserOrDefault();
+            return user == null
+                ? Array.Empty<ScoreRecord>()
+                : ConvertRecords(LocalUserDatabase.LoadRecentForUser(user.Id, MaxRecords));
+        }
+
+        public static ScoreRecord[] LoadClassRecent(string className)
+        {
+            if (!CurrentUserSession.IsAdmin)
             {
                 return Array.Empty<ScoreRecord>();
             }
+
+            return ConvertRecords(LocalUserDatabase.LoadRecentForClass(className, MaxRecords));
+        }
+
+        public static ScoreRecord[] LoadAllRecent()
+        {
+            return CurrentUserSession.IsAdmin
+                ? ConvertRecords(LocalUserDatabase.LoadRecentAll(MaxRecords))
+                : LoadCurrentUserRecent();
         }
 
         public static void Add(ScoreRecord record)
@@ -54,33 +72,67 @@ namespace DroneMicroClass
                 return;
             }
 
-            ScoreRecord[] existing = LoadRecent();
-            int count = Mathf.Min(existing.Length + 1, MaxRecords);
-            ScoreRecord[] records = new ScoreRecord[count];
-            records[0] = record;
-            for (int i = 1; i < count; i++)
+            if (string.IsNullOrWhiteSpace(record.sceneName))
             {
-                records[i] = existing[i - 1];
+                record.sceneName = SceneManager.GetActiveScene().name;
             }
 
-            Save(records);
+            LocalUserDatabase.AddTrainingRecord(CurrentUserSession.GetUserOrDefault(), record);
         }
 
         public static void Clear()
         {
-            PlayerPrefs.DeleteKey(PlayerPrefsKey);
-            PlayerPrefs.Save();
+            LocalUserDatabase.UserRecord user = CurrentUserSession.GetUserOrDefault();
+            if (user == null)
+            {
+                return;
+            }
+
+            if (user.IsAdmin)
+            {
+                LocalUserDatabase.ClearAllRecords();
+            }
+            else
+            {
+                LocalUserDatabase.ClearRecordsForUser(user.Id);
+            }
         }
 
-        private static void Save(ScoreRecord[] records)
+        public static string ExportCsv()
         {
-            ScoreRecordCollection collection = new ScoreRecordCollection
-            {
-                records = records ?? Array.Empty<ScoreRecord>()
-            };
+            return LocalUserDatabase.ExportRecordsCsv(CurrentUserSession.IsAdmin);
+        }
 
-            PlayerPrefs.SetString(PlayerPrefsKey, JsonUtility.ToJson(collection));
-            PlayerPrefs.Save();
+        private static ScoreRecord[] ConvertRecords(LocalUserDatabase.TrainingRecord[] records)
+        {
+            if (records == null || records.Length == 0)
+            {
+                return Array.Empty<ScoreRecord>();
+            }
+
+            ScoreRecord[] converted = new ScoreRecord[records.Length];
+            for (int i = 0; i < records.Length; i++)
+            {
+                LocalUserDatabase.TrainingRecord record = records[i];
+                converted[i] = new ScoreRecord
+                {
+                    username = record.Username,
+                    displayName = record.DisplayName,
+                    className = record.ClassName,
+                    sceneName = record.SceneName,
+                    score = record.Score,
+                    grade = record.Grade,
+                    completionTimeSeconds = record.CompletionTimeSeconds,
+                    collisions = record.Collisions,
+                    wrongCheckpointHits = record.WrongCheckpointHits,
+                    outOfCourseTicks = record.OutOfCourseTicks,
+                    unsafeAltitudeTicks = record.UnsafeAltitudeTicks,
+                    droneName = record.DroneName,
+                    recordedAt = record.RecordedAt
+                };
+            }
+
+            return converted;
         }
     }
 }

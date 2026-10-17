@@ -15,7 +15,7 @@ namespace DroneMicroClass.Editor
     public static class DroneMicroClassSceneBuilder
     {
         private const string Root = "Assets/DroneMicroClass";
-        private const string FigureEightScenePath = Root + "/Scenes/DroneFigureEightTrainingUnity.unity";
+        private const string FigureEightScenePath = Root + "/Scenes/8字飞行.unity";
         private const string PrefabPath = Root + "/Prefabs/TeachingDrone.prefab";
         private const string HudPrefabPath = Root + "/Prefabs/FlightHud.prefab";
         private const string DjiMainDronePath = Root + "/Models/Drones/DJI/DJI_Drone.fbx";
@@ -1671,6 +1671,7 @@ namespace DroneMicroClass.Editor
             var scaler = canvasObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
+            ResponsiveCanvasScaler.ApplyTo(canvas);
             canvasObject.AddComponent<GraphicRaycaster>();
             var hud = canvasObject.AddComponent<DroneHud>();
             hud.Bind(flight, fleet, cameraRig, noseTexture);
@@ -1691,8 +1692,8 @@ namespace DroneMicroClass.Editor
             Text throttle = CreateHudText(throttlePanel.transform, "Throttle Text", font, new Vector2(0f, -14f), 18, FontStyle.Bold, Color.white, TextAnchor.UpperCenter);
             SetStretch(throttle.rectTransform, 0f, 0f, 1f, 1f, 8f, 8f, -8f, -8f);
 
-            GameObject cameraPanel = CreateHudPanel(canvasObject.transform, "Nose Camera Panel", new Vector2(0f, 32f), new Vector2(520f, 345f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Color(0f, 0f, 0f, 0.42f));
-            RawImage noseView = CreateHudRawImage(cameraPanel.transform, "Nose Camera View", noseTexture, new Vector2(0f, 22f), new Vector2(480f, 270f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+            GameObject cameraPanel = CreateHudPanel(canvasObject.transform, "Nose Camera Panel", new Vector2(0f, 16f), new Vector2(288f, 198f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Color(0f, 0f, 0f, 0.42f));
+            RawImage noseView = CreateHudRawImage(cameraPanel.transform, "Nose Camera View", noseTexture, new Vector2(0f, 12f), new Vector2(260f, 146f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
             Text title = CreateHudText(cameraPanel.transform, "Title", font, new Vector2(0f, -12f), 24, FontStyle.Bold, green, TextAnchor.UpperCenter);
             Text speed = CreateHudText(cameraPanel.transform, "Speed", font, new Vector2(-250f, 12f), 20, FontStyle.Bold, green, TextAnchor.LowerLeft);
             Text altitude = CreateHudText(cameraPanel.transform, "Altitude", font, new Vector2(-250f, 38f), 16, FontStyle.Bold, green, TextAnchor.LowerLeft);
@@ -1785,7 +1786,7 @@ namespace DroneMicroClass.Editor
                 parent,
                 "Mini Map",
                 new Vector2(-24f, -24f),
-                new Vector2(250f, 250f),
+                new Vector2(350f, 250f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
@@ -1803,7 +1804,7 @@ namespace DroneMicroClass.Editor
                 hudRoot.transform,
                 "Mini Map",
                 new Vector2(-24f, -24f),
-                new Vector2(250f, 250f),
+                new Vector2(350f, 250f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
@@ -1819,7 +1820,7 @@ namespace DroneMicroClass.Editor
             panelRect.anchorMax = new Vector2(1f, 1f);
             panelRect.pivot = new Vector2(1f, 1f);
             panelRect.anchoredPosition = new Vector2(-24f, -24f);
-            panelRect.sizeDelta = new Vector2(250f, 250f);
+            panelRect.sizeDelta = new Vector2(350f, 250f);
 
             var panelImage = panel.GetComponent<Image>() ?? panel.AddComponent<Image>();
             panelImage.color = new Color(0f, 0f, 0f, 0.36f);
@@ -1837,7 +1838,11 @@ namespace DroneMicroClass.Editor
             GameObject trackObject = new GameObject("Mini Map Track", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             trackObject.transform.SetParent(panel.transform, false);
             var trackRect = trackObject.GetComponent<RectTransform>();
-            SetStretch(trackRect, 0f, 0f, 1f, 1f, 10f, 10f, -10f, -10f);
+            trackRect.anchorMin = new Vector2(0.5f, 0.5f);
+            trackRect.anchorMax = trackRect.anchorMin;
+            trackRect.pivot = new Vector2(0.5f, 0.5f);
+            trackRect.anchoredPosition = Vector2.zero;
+            trackRect.sizeDelta = new Vector2(230f, 230f);
             var trackImage = trackObject.GetComponent<Image>();
             trackImage.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(MiniMapTrackSpritePath);
             trackImage.color = Color.white;

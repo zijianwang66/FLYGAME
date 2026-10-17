@@ -60,7 +60,9 @@ namespace DroneMicroClass
 
         [Header("Guidance")]
         [SerializeField] private bool showGuidanceLights = true;
-        [SerializeField] private float guideLineWidth = 0.18f;
+        [SerializeField] private bool showGuideLightObjects = false;
+        [SerializeField, Min(0.1f)] private float checkpointMarkerScale = 0.35f;
+        [SerializeField] private float guideLineWidth = 0.06f;
         [SerializeField] private float guideLightRange = 10f;
         [SerializeField] private float guideLightIntensity = 3.2f;
 
@@ -699,8 +701,13 @@ namespace DroneMicroClass
 
         private void SaveScoreRecord(ScoreBreakdown score)
         {
-            ScoreRecordStore.Add(new ScoreRecordStore.ScoreRecord
+            LocalUserDatabase.UserRecord user = CurrentUserSession.GetUserOrDefault();
+            ScoreRecordStore.ScoreRecord record = new ScoreRecordStore.ScoreRecord
             {
+                username = user != null ? user.Username : string.Empty,
+                displayName = user != null ? user.DisplayName : string.Empty,
+                className = user != null ? user.ClassName : string.Empty,
+                sceneName = SceneManager.GetActiveScene().name,
                 score = score.FinalScore,
                 grade = score.Grade,
                 completionTimeSeconds = score.ElapsedSeconds,
@@ -710,7 +717,17 @@ namespace DroneMicroClass
                 unsafeAltitudeTicks = unsafeAltitudeTicks,
                 droneName = GetDroneName(),
                 recordedAt = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-            });
+            };
+
+            try
+            {
+                ScoreRecordStore.Add(record);
+                Debug.Log($"Training record saved: user={record.username}, scene={record.sceneName}, score={record.score}, grade={record.grade}");
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError("Failed to save training record: " + exception.Message);
+            }
         }
 
         private string GetDroneName()
@@ -831,7 +848,7 @@ namespace DroneMicroClass
                 Renderer markerRenderer = checkpoints[i].GetComponentInChildren<Renderer>();
                 markerRenderers.Add(markerRenderer);
                 markerBaseScales.Add(checkpoints[i].localScale);
-                markerLights.Add(showGuidanceLights ? CreateGuideLight("Checkpoint_" + (i + 1) + "_Light", checkpoints[i], new Color(0.15f, 0.95f, 1f, 1f)) : null);
+                markerLights.Add(showGuidanceLights && showGuideLightObjects ? CreateGuideLight("Checkpoint_" + (i + 1) + "_Light", checkpoints[i], new Color(0.15f, 0.95f, 1f, 1f)) : null);
             }
 
             finishWhenFinalCheckpointCleared = finishTarget == null;
@@ -866,7 +883,7 @@ namespace DroneMicroClass
                 finishMarkerRenderer.sharedMaterial = CreateMarkerMaterial(new Color(0.95f, 0.2f, 1f, 0.7f));
             }
 
-            if (showGuidanceLights)
+            if (showGuidanceLights && showGuideLightObjects)
             {
                 finishLight = CreateGuideLight("Finish_Light", finishMarker.transform, new Color(1f, 0.2f, 1f, 1f));
             }
@@ -970,7 +987,7 @@ namespace DroneMicroClass
             marker.name = objectName;
             marker.transform.SetParent(transform);
             marker.transform.position = position;
-            marker.transform.localScale = Vector3.one;
+            marker.transform.localScale = Vector3.one * Mathf.Max(0.1f, checkpointMarkerScale);
             Collider markerCollider = marker.GetComponent<Collider>();
             if (markerCollider != null)
             {
@@ -1087,6 +1104,7 @@ namespace DroneMicroClass
             CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
+            ResponsiveCanvasScaler.ApplyTo(canvas);
 
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             GameObject missionPanel = CreatePanel(canvasObject.transform, "Mission Status Background", Vector2.zero, new Vector2(350f, 250f), new Color(0.01f, 0.02f, 0.025f, 0.72f));
@@ -1152,13 +1170,13 @@ namespace DroneMicroClass
             briefingBodyText = CreateText(panel.transform, "Briefing Body", new Vector2(90f, -142f), new Vector2(1220f, 650f), 21, FontStyle.Normal, TextAnchor.UpperLeft);
             briefingControlsDiagram = CreateControlsDiagram(panel.transform);
             briefingControlsDiagram.SetActive(false);
-            briefingPageText = CreateText(panel.transform, "Briefing Page", new Vector2(0f, -852f), new Vector2(220f, 32f), 18, FontStyle.Normal, TextAnchor.UpperCenter);
+            briefingPageText = CreateText(panel.transform, "Briefing Page", new Vector2(0f, -850f), new Vector2(220f, 32f), 18, FontStyle.Normal, TextAnchor.UpperCenter);
 
-            Button nextButton = CreateButton(panel.transform, "下一步", new Vector2(-150f, -910f), new Vector2(240f, 62f));
+            Button nextButton = CreateButton(panel.transform, "下一步", new Vector2(-150f, -912f), new Vector2(240f, 62f));
             nextButton.onClick.AddListener(AdvanceBriefing);
             briefingNextButtonText = nextButton.GetComponentInChildren<Text>();
 
-            Button menuButton = CreateButton(panel.transform, "返回菜单", new Vector2(150f, -910f), new Vector2(240f, 62f));
+            Button menuButton = CreateButton(panel.transform, "返回菜单", new Vector2(150f, -912f), new Vector2(240f, 62f));
             menuButton.onClick.AddListener(ReturnToMenu);
             UpdateBriefingPage();
             return overlay;
@@ -1181,8 +1199,8 @@ namespace DroneMicroClass
             RectTransform bodyRect = briefingBodyText.rectTransform;
             if (showControlsDiagram)
             {
-                bodyRect.anchoredPosition = new Vector2(120f, -810f);
-                bodyRect.sizeDelta = new Vector2(1160f, 42f);
+                bodyRect.anchoredPosition = new Vector2(120f, -800f);
+                bodyRect.sizeDelta = new Vector2(1160f, 34f);
                 briefingBodyText.fontSize = 17;
             }
             else
@@ -1239,8 +1257,8 @@ namespace DroneMicroClass
                 imageRect.anchorMin = new Vector2(0.5f, 1f);
                 imageRect.anchorMax = imageRect.anchorMin;
                 imageRect.pivot = new Vector2(0.5f, 1f);
-                imageRect.anchoredPosition = new Vector2(0f, -104f);
-                imageRect.sizeDelta = new Vector2(980f, 735f);
+                imageRect.anchoredPosition = new Vector2(0f, -124f);
+                imageRect.sizeDelta = new Vector2(880f, 660f);
 
                 RawImage image = imageObject.GetComponent<RawImage>();
                 image.texture = controlsTexture;
@@ -1249,7 +1267,7 @@ namespace DroneMicroClass
                 return imageObject;
             }
 
-            GameObject missingPanel = CreatePanel(parent, "CAAC Controls Image Missing", new Vector2(0f, -104f), new Vector2(980f, 735f), new Color(0.98f, 0.98f, 0.96f, 1f));
+            GameObject missingPanel = CreatePanel(parent, "CAAC Controls Image Missing", new Vector2(0f, -124f), new Vector2(880f, 660f), new Color(0.98f, 0.98f, 0.96f, 1f));
             RectTransform missingRect = missingPanel.GetComponent<RectTransform>();
             missingRect.anchorMin = new Vector2(0.5f, 1f);
             missingRect.anchorMax = missingRect.anchorMin;
@@ -1608,7 +1626,7 @@ namespace DroneMicroClass
                 Color finishColor = finishActive ? new Color(1f, 0.2f, 1f, 0.95f) : new Color(0.95f, 0.2f, 1f, 0.25f);
                 if (finishLight != null)
                 {
-                    finishLight.enabled = showGuidanceLights && finishActive;
+                    finishLight.enabled = showGuidanceLights && showGuideLightObjects && finishActive;
                     finishLight.color = finishColor;
                     finishLight.intensity = guideLightIntensity * (finishActive ? pulse : 0.35f);
                 }
@@ -1624,7 +1642,7 @@ namespace DroneMicroClass
                 Light light = markerLights[index];
                 if (light != null)
                 {
-                    light.enabled = showGuidanceLights && lightEnabled;
+                    light.enabled = showGuidanceLights && showGuideLightObjects && lightEnabled;
                     light.color = new Color(color.r, color.g, color.b, 1f);
                     light.intensity = guideLightIntensity * Mathf.Max(0.1f, intensityScale);
                     light.range = guideLightRange * (lightEnabled ? 1.15f : 0.75f);

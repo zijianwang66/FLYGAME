@@ -21,7 +21,7 @@ namespace DroneMicroClass
         [SerializeField] private RawImage noseCameraView;
         [SerializeField] private Image throttleFill;
         [SerializeField] private DroneMiniMap miniMap;
-        [SerializeField] private float noseCameraDisplayWidth = 480f;
+        [SerializeField] private float noseCameraDisplayWidth = 260f;
         [SerializeField] private Vector3 displayCoordinateOrigin = new Vector3(325f, 48f, 468f);
 
         private const float TextUpdateInterval = 0.08f;
@@ -34,12 +34,16 @@ namespace DroneMicroClass
 
         private void Awake()
         {
+            ResponsiveCanvasScaler.ApplyTo(GetComponentInParent<Canvas>());
+            ResolveBindings();
             ConfigureNoseCameraView(noseCameraView != null ? noseCameraView.texture : null);
             ConfigureFlightDataLayout();
         }
 
         private void OnEnable()
         {
+            ResponsiveCanvasScaler.ApplyTo(GetComponentInParent<Canvas>());
+            ResolveBindings();
             ConfigureFlightDataLayout();
         }
 
@@ -81,6 +85,7 @@ namespace DroneMicroClass
 
         private void Update()
         {
+            ResolveBindings();
             if (target == null)
             {
                 return;
@@ -136,6 +141,38 @@ namespace DroneMicroClass
             }
 
             UpdateEnvironmentDisplay();
+        }
+
+        private void ResolveBindings()
+        {
+            if (target == null)
+            {
+                target = FindFirstObjectByType<SimpleFlightController>();
+            }
+
+            if (fleet == null)
+            {
+                fleet = target != null ? target.GetComponent<DroneFleetManager>() : null;
+                if (fleet == null)
+                {
+                    fleet = FindFirstObjectByType<DroneFleetManager>();
+                }
+            }
+
+            if (cameraRig == null)
+            {
+                Camera mainCamera = Camera.main;
+                cameraRig = mainCamera != null ? mainCamera.GetComponent<DroneCameraRig>() : null;
+                if (cameraRig == null)
+                {
+                    cameraRig = FindFirstObjectByType<DroneCameraRig>();
+                }
+            }
+
+            if (miniMap != null && target != null)
+            {
+                miniMap.Bind(target);
+            }
         }
 
         private void ConfigureFlightDataLayout()
@@ -258,7 +295,7 @@ namespace DroneMicroClass
             panelRect.anchorMax = Vector2.zero;
             panelRect.pivot = Vector2.zero;
             panelRect.anchoredPosition = new Vector2(24f, 24f);
-            panelRect.sizeDelta = new Vector2(350f, 330f);
+            panelRect.sizeDelta = new Vector2(350f, 350f);
 
             Image panelImage = panelObject.GetComponent<Image>();
             panelImage.color = new Color(0.035f, 0.055f, 0.065f, 0.84f);
@@ -428,10 +465,12 @@ namespace DroneMicroClass
 
             if (viewRect.parent is RectTransform panelRect)
             {
-                panelRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, noseCameraDisplayWidth + 40f);
-                panelRect.SetSizeWithCurrentAnchors(
-                    RectTransform.Axis.Vertical,
-                    noseCameraDisplayWidth / aspect + 75f);
+                panelRect.anchorMin = new Vector2(0.5f, 0f);
+                panelRect.anchorMax = panelRect.anchorMin;
+                panelRect.pivot = new Vector2(0.5f, 0f);
+                panelRect.anchoredPosition = new Vector2(0f, 12f);
+                panelRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, noseCameraDisplayWidth + 28f);
+                panelRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, noseCameraDisplayWidth / aspect + 52f);
 
                 Image panelImage = panelRect.GetComponent<Image>();
                 if (panelImage != null)
