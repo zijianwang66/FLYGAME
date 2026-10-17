@@ -1,0 +1,14 @@
+Windows x64 package verification — 2026-10-17
+
+Build: Succeeded; 0 errors; 1 warning.
+Startup: player ran for 10 seconds with no startup exceptions in headless smoke test.
+Archive: all 192 files verified against source SHA-256; runtime dependencies present.
+
+Ground observer verification:
+Ground observer camera verification
+PASS: elevated ground, trigger filtering, fixed launch anchor, smooth zoom, screen size (0.0501/0.0501), zoom cap (7.93 deg), far clipping, rapid turns, overhead tracking, portrait aspect, return zoom, mode cycling and lens reset.
+PASS: Assets/DroneMicroClass/Scenes/矩形飞行训练.unity, observer=(0.01, 1.60, -19.60), ground=WB_Infield_CenterRectangle_84p39x73, eyeHeight=1.60, FOV=58.00
+PASS: Assets/DroneMicroClass/Scenes/8字飞行.unity, observer=(0.00, 1.60, -19.60), ground=WB_Infield_CenterRectangle_84p39x73, eyeHeight=1.60, FOV=58.00
+PASS: Assets/DroneMicroClass/Scenes/forest.unity, observer=(436.40, 30.93, 280.00), ground=Terrain, eyeHeight=1.60, FOV=58.00
+PASS: Assets/DroneMicroClass/Scenes/学校.unity, observer=(-850.40, 11.86, 401.30), ground=Cube, eyeHeight=1.60, FOV=53.36
+PASS: all ground observer checks passed.
