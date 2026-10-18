@@ -15,7 +15,7 @@ namespace DroneMicroClass
 
         [SerializeField] private Transform target;
         [SerializeField] private DroneFleetManager fleet;
-        [SerializeField] private CameraMode mode = CameraMode.Chase;
+        [SerializeField] private CameraMode mode = CameraMode.GroundObserver;
         [SerializeField] private bool allowInput = true;
         [SerializeField] private Vector3 chaseOffset = new Vector3(0f, 3.8f, -10f);
         [SerializeField] private Vector3 wideFollowOffset = new Vector3(0f, 7f, -16f);
@@ -31,8 +31,12 @@ namespace DroneMicroClass
         [SerializeField] private KeyCode nextCameraKey = KeyCode.C;
         [SerializeField] private KeyCode previousCameraKey = KeyCode.V;
 
+        [Header("Development Camera Switching")]
+        [SerializeField] private bool defaultToGroundObserver = true;
+        [SerializeField] private bool allowViewSwitchingInRelease;
+
         [Header("Fixed Human-height Observer")]
-        [SerializeField, Min(0.5f)] private float observerEyeHeight = 1.6f;
+        [SerializeField, Min(0.5f)] private float observerEyeHeight = 2.2f;
         [SerializeField, Min(1f)] private float observerDistanceBehindLaunch = 8f;
         [SerializeField, Min(1f)] private float observerZoomStartDistance = 18f;
         [SerializeField, Range(1f, 16f)] private float observerMaximumZoom = 8f;
@@ -77,9 +81,36 @@ namespace DroneMicroClass
 
         private void Start()
         {
+            ConfigurePrimaryAudioListener();
             targetBody = target != null ? target.GetComponent<Rigidbody>() : null;
             // Capture the launch area before takeoff, even when another view is active.
             InitializeObserverPosition();
+            if (allowInput && defaultToGroundObserver)
+            {
+                SetMode(CameraMode.GroundObserver);
+            }
+        }
+
+        private void ConfigurePrimaryAudioListener()
+        {
+            if (!allowInput)
+            {
+                return;
+            }
+
+            AudioListener primaryListener = GetComponent<AudioListener>();
+            if (primaryListener == null)
+            {
+                primaryListener = gameObject.AddComponent<AudioListener>();
+            }
+
+            AudioListener[] listeners = FindObjectsByType<AudioListener>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            foreach (AudioListener listener in listeners)
+            {
+                listener.enabled = listener == primaryListener;
+            }
         }
 
         private void OnDisable()
@@ -118,7 +149,8 @@ namespace DroneMicroClass
 
         private void Update()
         {
-            if (!allowInput)
+            bool isDevelopmentContext = Application.isEditor || Debug.isDebugBuild;
+            if (!allowInput || (!isDevelopmentContext && !allowViewSwitchingInRelease))
             {
                 return;
             }

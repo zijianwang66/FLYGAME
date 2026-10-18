@@ -22,5 +22,10 @@ namespace DroneMicroClass
         {
             challenge?.RegisterCheckpoint(this, other);
         }
+
+        private void OnTriggerStay(Collider other)
+        {
+            challenge?.RegisterCheckpoint(this, other);
+        }
     }
 }

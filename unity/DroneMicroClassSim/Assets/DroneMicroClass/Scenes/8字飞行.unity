@@ -2270,6 +2270,15 @@ MonoBehaviour:
   noseHorizonSharpness: 24
   nextCameraKey: 99
   previousCameraKey: 118
+  defaultToGroundObserver: 1
+  allowViewSwitchingInRelease: 0
+  observerEyeHeight: 2.2
+  observerDistanceBehindLaunch: 8
+  observerZoomStartDistance: 18
+  observerMaximumZoom: 8
+  observerZoomSmoothTime: 0.45
+  observerRotationSharpness: 12
+  groundObserverKey: 103
 --- !u!81 &81793856
 AudioListener:
   m_ObjectHideFlags: 0
@@ -36063,7 +36072,6 @@ MonoBehaviour:
   finishTarget: {fileID: 0}
   targetTimeSeconds: 120
   maxTimeSeconds: 180
-  minSafeAltitude: 4
   maxSafeAltitude: 8
   altitudePenaltyInterval: 1.5
   collisionPenalty: 8
@@ -36074,18 +36082,27 @@ MonoBehaviour:
   createDefaultCourseIfEmpty: 1
   startWhenDroneTakesOff: 1
   displayOrigin: {x: 325, y: 48, z: 468}
+  routeLayout: 0
   courseCenter: {x: 0, y: 0, z: 0}
   courseRadius: 6
+  rectangleHalfExtents: {x: 15, y: 8}
+  rectangleBoundaryRenderer: {fileID: 0}
+  rectangleBoundaryCenterInset: 0.03
   checkpointHeight: 6
-  checkpointHorizontalTolerance: 1
-  checkpointVerticalTolerance: 2
-  sharedCheckpointDebounceSeconds: 0.35
+  checkpointHorizontalTolerance: 6
+  checkpointGroundTolerance: 0.25
   showGuidanceLights: 1
   showGuideLightObjects: 0
+  showCheckpointMarkers: 0
+  showAircraftGroundProjection: 1
   checkpointMarkerScale: 0.35
   guideLineWidth: 0.06
   guideLightRange: 10
   guideLightIntensity: 3.2
+  groundProjectionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  groundProjectionOffset: 0.035
 --- !u!4 &1332167105
 Transform:
   m_ObjectHideFlags: 0
@@ -47445,7 +47462,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7120745314672452077, guid: dd4b295761e53e34f9114c62d8960484, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.72
+      value: 0.212
       objectReference: {fileID: 0}
     - target: {fileID: 7120745314672452077, guid: dd4b295761e53e34f9114c62d8960484, type: 3}
       propertyPath: m_LocalPosition.z
@@ -55564,6 +55581,15 @@ MonoBehaviour:
   noseHorizonSharpness: 24
   nextCameraKey: 99
   previousCameraKey: 118
+  defaultToGroundObserver: 1
+  allowViewSwitchingInRelease: 0
+  observerEyeHeight: 2.2
+  observerDistanceBehindLaunch: 8
+  observerZoomStartDistance: 18
+  observerMaximumZoom: 8
+  observerZoomSmoothTime: 0.45
+  observerRotationSharpness: 12
+  groundObserverKey: 103
 --- !u!20 &1995805713
 Camera:
   m_ObjectHideFlags: 0

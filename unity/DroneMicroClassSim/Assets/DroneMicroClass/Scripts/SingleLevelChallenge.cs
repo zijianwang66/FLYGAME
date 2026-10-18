@@ -23,6 +23,9 @@ namespace DroneMicroClass
 
         private const int CheckpointsPerLoop = 9;
         private const int BriefingPageCount = 3;
+        private const float TrajectoryFreeRadius = 3f;
+        private const float TrajectoryPenaltyPerMeter = 2f;
+        private const float CheckpointDepartureDistance = 1.5f;
 
         [Header("Mission")]
         [SerializeField] private SimpleFlightController drone;
@@ -30,7 +33,6 @@ namespace DroneMicroClass
         [SerializeField] private Transform finishTarget;
         [SerializeField] private float targetTimeSeconds = 120f;
         [SerializeField] private float maxTimeSeconds = 180f;
-        [SerializeField] private float minSafeAltitude = 4f;
         [SerializeField] private float maxSafeAltitude = 8f;
         [SerializeField] private float altitudePenaltyInterval = 1.5f;
         [SerializeField] private int collisionPenalty = 8;
@@ -54,17 +56,20 @@ namespace DroneMicroClass
         [SerializeField] private Renderer rectangleBoundaryRenderer;
         [SerializeField, Min(0f)] private float rectangleBoundaryCenterInset = 0.03f;
         [SerializeField, Min(0.1f)] private float checkpointHeight = 6f;
-        [SerializeField, Min(0.5f)] private float checkpointHorizontalTolerance = 1f;
-        [SerializeField, Min(0.5f)] private float checkpointVerticalTolerance = 2f;
-        [SerializeField, Min(0.05f)] private float sharedCheckpointDebounceSeconds = 0.35f;
+        [SerializeField, Min(0.5f)] private float checkpointHorizontalTolerance = 6f;
+        [SerializeField, Min(0f)] private float checkpointGroundTolerance = 0.25f;
 
         [Header("Guidance")]
         [SerializeField] private bool showGuidanceLights = true;
         [SerializeField] private bool showGuideLightObjects = false;
+        [SerializeField] private bool showCheckpointMarkers = false;
+        [SerializeField] private bool showAircraftGroundProjection = true;
         [SerializeField, Min(0.1f)] private float checkpointMarkerScale = 0.35f;
         [SerializeField] private float guideLineWidth = 0.06f;
         [SerializeField] private float guideLightRange = 10f;
         [SerializeField] private float guideLightIntensity = 3.2f;
+        [SerializeField] private LayerMask groundProjectionLayers = ~0;
+        [SerializeField, Min(0f)] private float groundProjectionOffset = 0.035f;
 
         private readonly List<ChallengeCheckpoint> checkpointTriggers = new List<ChallengeCheckpoint>();
         private readonly List<Renderer> markerRenderers = new List<Renderer>();
@@ -77,15 +82,14 @@ namespace DroneMicroClass
         private ChallengeCheckpoint courseEntryTrigger;
         private Renderer courseEntryMarkerRenderer;
         private bool courseEntryReached;
-        private float lastCourseEntryTime = -10f;
-        private float lastCheckpointClearTime = -10f;
-        private Vector3 lastCheckpointClearPosition;
         private ChallengeCheckpoint finishTrigger;
         private Renderer finishMarkerRenderer;
         private Vector3 finishMarkerBaseScale = Vector3.one;
         private Light finishLight;
         private LineRenderer activeGuideLine;
         private Material guideMaterial;
+        private TrainingCueAudio cueAudio;
+        private readonly RaycastHit[] groundProjectionHits = new RaycastHit[32];
         private ChallengeState state = ChallengeState.Briefing;
         private float startTime;
         private float finishTime;
@@ -93,6 +97,10 @@ namespace DroneMicroClass
         private float lastCollisionPenaltyTime = -10f;
         private float feedbackUntilTime;
         private int expectedCheckpoint;
+        private bool checkpointPassActive;
+        private float checkpointPassMinimumDistance;
+        private int trajectoryPenaltyPoints;
+        private Vector3 previousDronePosition;
         private int penalties;
         private int collisions;
         private int unsafeAltitudeTicks;
@@ -112,6 +120,7 @@ namespace DroneMicroClass
         private Text resultSummaryText;
         private Text resultBreakdownText;
         private Text resultAdviceText;
+        private GameObject briefingRouteDiagram;
         private Text briefingTitleText;
         private Text briefingSubtitleText;
         private Text briefingBodyText;
@@ -129,11 +138,11 @@ namespace DroneMicroClass
             : "沿着蓝色8字航道完成一整圈飞行";
         private string RouteTaskDescription => routeLayout == RouteLayout.Rectangle
             ? "从起降点起飞后，先飞向矩形底边中点。\n\n" +
-              "保持约 6 米高度，沿底边向右，再依次沿右边、顶边和左边绕场一周。\n\n" +
-              "检查点具有水平和垂直容错，主要用于引导飞行路线。"
+              "飞行高度不超过 8 米，沿底边向右，再依次沿右边、顶边和左边绕场一周。\n\n" +
+              "隐藏检查点用于航迹标准度计分，请尽量沿航道中心线飞行。"
             : "从起降点起飞后，先飞向两个圆环的中心切点。\n\n" +
-              "保持约 6 米高度，先沿右环顺时针飞行，再沿左环逆时针飞行。\n\n" +
-              "检查点具有水平和垂直容错，主要用于引导飞行路线。";
+              "飞行高度不超过 8 米，先沿右环顺时针飞行，再沿左环逆时针飞行。\n\n" +
+              "隐藏检查点用于航迹标准度计分，请尽量沿航道中心线飞行。";
 
         private void Awake()
         {
@@ -158,6 +167,12 @@ namespace DroneMicroClass
                 }
 
                 relay.Bind(this);
+            }
+
+            cueAudio = GetComponent<TrainingCueAudio>();
+            if (cueAudio == null)
+            {
+                cueAudio = gameObject.AddComponent<TrainingCueAudio>();
             }
 
             CreateHud();
@@ -187,6 +202,7 @@ namespace DroneMicroClass
             {
                 UpdateAltitudePenalty();
                 UpdateCourseBoundaryPenalty();
+                UpdateCheckpointPassage();
                 UpdateCourseVisuals();
                 if (ElapsedSeconds >= maxTimeSeconds)
                 {
@@ -213,60 +229,83 @@ namespace DroneMicroClass
                 return;
             }
 
-            if (checkpoint != finishTrigger && !IsWithinCheckpointTolerance(checkpoint.transform.position))
-            {
-                return;
-            }
-
             if (checkpoint == courseEntryTrigger)
             {
-                if (!courseEntryReached)
+                if (!courseEntryReached && IsWithinCheckpointTolerance(checkpoint.transform.position))
                 {
                     courseEntryReached = true;
-                    lastCourseEntryTime = Time.time;
-                    SetFeedback($"已进入{RouteDisplayName}，前往检查点 1。", 2f);
+                    cueAudio?.PlayCheckpoint();
+                    SetFeedback($"已进入{RouteDisplayName}，请沿航线飞行。", 2f);
                     UpdateCourseVisuals();
                 }
 
                 return;
             }
 
-            if (!courseEntryReached)
+            if (checkpoint == finishTrigger && courseEntryReached
+                && expectedCheckpoint >= RequiredCheckpointCount)
             {
+                SetFeedback("已到达终点，训练完成。", 3f);
+                FinishChallenge();
+            }
+        }
+
+        private void UpdateCheckpointPassage()
+        {
+            Vector3 position = drone.transform.position;
+            if (!courseEntryReached || expectedCheckpoint >= RequiredCheckpointCount)
+            {
+                previousDronePosition = position;
                 return;
             }
 
-            if (ShouldIgnoreSharedCheckpointEvent(checkpoint))
+            Vector3 checkpointPosition = checkpointTriggers[expectedCheckpoint].transform.position;
+            Vector3 offset = position - checkpointPosition;
+            float horizontalDistance = new Vector2(offset.x, offset.z).magnitude;
+            if (position.y - courseCenter.y > maxSafeAltitude)
             {
-                return;
+                checkpointPassActive = false;
             }
-
-            if (checkpoint == finishTrigger)
+            else if (horizontalDistance <= checkpointHorizontalTolerance)
             {
-                if (expectedCheckpoint >= RequiredCheckpointCount)
+                float segmentDistance = Mathf.Sqrt(
+                    DistanceSqToSegmentXZ(checkpointPosition, previousDronePosition, position));
+                if (!checkpointPassActive)
                 {
-                    SetFeedback("已到达终点，训练完成。", 3f);
-                    FinishChallenge();
+                    checkpointPassActive = true;
+                    checkpointPassMinimumDistance = horizontalDistance;
                 }
 
-                return;
+                checkpointPassMinimumDistance = Mathf.Min(checkpointPassMinimumDistance, segmentDistance);
+                if (horizontalDistance >= checkpointPassMinimumDistance + CheckpointDepartureDistance)
+                {
+                    CompleteCheckpointPassage();
+                }
             }
-
-            if (checkpoint.Index != expectedCheckpoint)
+            else if (checkpointPassActive)
             {
-                return;
+                checkpointPassMinimumDistance = Mathf.Min(checkpointPassMinimumDistance,
+                    Mathf.Sqrt(DistanceSqToSegmentXZ(checkpointPosition, previousDronePosition, position)));
+                CompleteCheckpointPassage();
             }
 
-            lastCheckpointClearTime = Time.time;
-            lastCheckpointClearPosition = checkpoint.transform.position;
+            previousDronePosition = position;
+        }
+
+        private void CompleteCheckpointPassage()
+        {
+            checkpointPassActive = false;
+            float excessDistance = Mathf.Max(0f, checkpointPassMinimumDistance - TrajectoryFreeRadius);
+            trajectoryPenaltyPoints += Mathf.CeilToInt(Mathf.Max(0f, excessDistance * TrajectoryPenaltyPerMeter - 0.0001f));
             expectedCheckpoint++;
+            cueAudio?.PlayCheckpoint();
             if (finishWhenFinalCheckpointCleared && expectedCheckpoint >= RequiredCheckpointCount)
             {
                 FinishChallenge();
                 return;
             }
 
-            SetFeedback($"已通过检查点 {checkpoint.Index + 1}。", 1.6f);
+            SetFeedback("已通过航段，继续沿航线飞行。", 1.6f);
             UpdateCourseVisuals();
         }
 
@@ -295,8 +334,10 @@ namespace DroneMicroClass
             finishTime = 0f;
             expectedCheckpoint = 0;
             courseEntryReached = false;
-            lastCourseEntryTime = -10f;
-            lastCheckpointClearTime = -10f;
+            checkpointPassActive = false;
+            checkpointPassMinimumDistance = float.PositiveInfinity;
+            trajectoryPenaltyPoints = 0;
+            previousDronePosition = drone != null ? drone.transform.position : Vector3.zero;
             penalties = 0;
             collisions = 0;
             unsafeAltitudeTicks = 0;
@@ -307,6 +348,7 @@ namespace DroneMicroClass
             outOfCoursePenaltyPoints = 0f;
             lastCollisionPenaltyTime = -10f;
             nextAltitudePenaltyTime = Time.time + altitudePenaltyInterval;
+            cueAudio?.PlayStart();
             SetFeedback($"训练开始，请先飞向{RouteEntryLabel}。", 2f);
             UpdateCourseVisuals();
             if (resultText != null)
@@ -331,6 +373,10 @@ namespace DroneMicroClass
             finishTime = Time.time;
             UpdateCourseVisuals();
             ScoreBreakdown score = BuildScoreBreakdown();
+            if (expectedCheckpoint >= RequiredCheckpointCount)
+            {
+                cueAudio?.PlayComplete();
+            }
             if (resultText != null)
             {
             resultText.text = $"训练完成  等级 {score.Grade}  得分 {score.FinalScore}\nR 或 Enter 重新训练 / Esc 返回菜单";
@@ -347,8 +393,10 @@ namespace DroneMicroClass
             finishTime = 0f;
             expectedCheckpoint = 0;
             courseEntryReached = false;
-            lastCourseEntryTime = -10f;
-            lastCheckpointClearTime = -10f;
+            checkpointPassActive = false;
+            checkpointPassMinimumDistance = float.PositiveInfinity;
+            trajectoryPenaltyPoints = 0;
+            previousDronePosition = drone != null ? drone.transform.position : Vector3.zero;
             penalties = 0;
             collisions = 0;
             unsafeAltitudeTicks = 0;
@@ -423,11 +471,12 @@ namespace DroneMicroClass
             }
 
             nextAltitudePenaltyTime = Time.time + altitudePenaltyInterval;
-            if (drone.Altitude < minSafeAltitude || drone.Altitude > maxSafeAltitude)
+            float altitudeAboveCourse = drone.transform.position.y - courseCenter.y;
+            if (altitudeAboveCourse > maxSafeAltitude)
             {
                 AddPenalty(unsafeAltitudePenalty);
                 unsafeAltitudeTicks++;
-                SetFeedback("高度不在安全范围内，请尽快调整。", 1.2f);
+                SetFeedback($"高度超过 {maxSafeAltitude:0.#} 米，请下降。", 1.2f, new Color(1f, 0.72f, 0.15f, 1f));
             }
         }
 
@@ -453,6 +502,7 @@ namespace DroneMicroClass
                 outOfCourseEvents++;
                 outOfCourseStartedAt = now;
                 lastCourseBoundaryUpdateTime = now;
+                cueAudio?.PlayDeviation();
                 SetFeedback("您已偏离航道。", 2f, new Color(1f, 0.16f, 0.16f, 1f));
                 return;
             }
@@ -580,7 +630,7 @@ namespace DroneMicroClass
                 ? Mathf.Max(0, RequiredCheckpointCount - expectedCheckpoint)
                 : 0;
             int incompleteCheckpointPenalty = incompleteCheckpoints * 12;
-            int totalPenalty = timePenalty + penalties + outOfCoursePenaltyTotal + incompleteCheckpointPenalty;
+            int totalPenalty = timePenalty + penalties + outOfCoursePenaltyTotal + trajectoryPenaltyPoints + incompleteCheckpointPenalty;
             int finalScore = Mathf.Clamp(100 - totalPenalty, 0, 100);
 
             return new ScoreBreakdown
@@ -590,6 +640,7 @@ namespace DroneMicroClass
                 CollisionPenalty = collisionPenaltyTotal,
                 UnsafeAltitudePenalty = unsafeAltitudePenaltyTotal,
                 OutOfCoursePenalty = outOfCoursePenaltyTotal,
+                TrajectoryPenalty = trajectoryPenaltyPoints,
                 OtherPenalty = otherPenalty,
                 IncompleteCheckpointPenalty = incompleteCheckpointPenalty,
                 IncompleteCheckpoints = incompleteCheckpoints,
@@ -651,9 +702,9 @@ namespace DroneMicroClass
                     $"超时：-{score.TimePenalty}\n" +
                     $"碰撞：{collisions} 次，-{score.CollisionPenalty}\n" +
                     $"偏离航道：{outOfCourseEvents} 次，-{score.OutOfCoursePenalty}\n" +
+                    $"航迹标准度：-{score.TrajectoryPenalty}\n" +
                     $"高度警告：{unsafeAltitudeTicks} 次，-{score.UnsafeAltitudePenalty}\n" +
-                    $"其他扣分：-{score.OtherPenalty}\n" +
-                    $"未完成检查点：{score.IncompleteCheckpoints} 个，-{score.IncompleteCheckpointPenalty}\n" +
+                    $"其他扣分：-{score.OtherPenalty + score.IncompleteCheckpointPenalty}\n" +
                     $"总扣分：-{score.TotalPenalty}";
             }
 
@@ -676,9 +727,14 @@ namespace DroneMicroClass
                 advice.Add("接近桶桩和中心区域时减小操纵量，预留制动距离。");
             }
 
+            if (score.TrajectoryPenalty > 0)
+            {
+                advice.Add("尽量贴近蓝色航道中心线，减少航迹标准度扣分。");
+            }
+
             if (unsafeAltitudeTicks > 0)
             {
-                advice.Add("保持 4–8 米安全高度，目标高度为 6 米。");
+                advice.Add("保持 8 米以下飞行，避免超高。");
             }
 
             if (score.TimePenalty > 0)
@@ -693,7 +749,7 @@ namespace DroneMicroClass
 
             if (advice.Count < 2)
             {
-                advice.Add("通过检查点后提前观察下一个蓝色目标，平滑衔接转弯。");
+                advice.Add("转弯时提前观察航道走向，平滑衔接下一段航线。");
             }
 
             return "训练建议\n1. " + advice[0] + "\n2. " + advice[1];
@@ -768,40 +824,25 @@ namespace DroneMicroClass
             Vector3 offset = drone.transform.position - checkpointPosition;
             float horizontalDistance = new Vector2(offset.x, offset.z).magnitude;
             return horizontalDistance <= checkpointHorizontalTolerance
-                && Mathf.Abs(offset.y) <= checkpointVerticalTolerance;
+                && drone.transform.position.y - courseCenter.y <= maxSafeAltitude;
         }
 
-        private bool ShouldIgnoreSharedCheckpointEvent(ChallengeCheckpoint checkpoint)
+        private Vector3 GetCheckpointTriggerCenter(Vector3 checkpointPosition)
         {
-            if (checkpoint == null)
-            {
-                return true;
-            }
+            float bottom = courseCenter.y - checkpointGroundTolerance;
+            float top = courseCenter.y + maxSafeAltitude + 0.05f;
+            checkpointPosition.y = (bottom + top) * 0.5f;
+            return checkpointPosition;
+        }
 
-            Vector3 position = checkpoint.transform.position;
-            float duplicateDistance = Mathf.Max(0.1f, checkpointHorizontalTolerance * 0.1f);
-            if (courseEntryTrigger != null
-                && Time.time - lastCourseEntryTime <= sharedCheckpointDebounceSeconds
-                && Vector3.Distance(position, courseEntryTrigger.transform.position) <= duplicateDistance)
-            {
-                return true;
-            }
-
-            if (Time.time - lastCheckpointClearTime <= sharedCheckpointDebounceSeconds
-                && Vector3.Distance(position, lastCheckpointClearPosition) <= duplicateDistance)
-            {
-                return true;
-            }
-
-            if (checkpoint.Index != expectedCheckpoint
-                && expectedCheckpoint >= 0
-                && expectedCheckpoint < checkpointTriggers.Count
-                && Vector3.Distance(position, checkpointTriggers[expectedCheckpoint].transform.position) <= duplicateDistance)
-            {
-                return true;
-            }
-
-            return false;
+        private Vector3 GetCheckpointTriggerSize(Vector3 checkpointPosition)
+        {
+            float bottom = courseCenter.y - checkpointGroundTolerance;
+            float top = courseCenter.y + maxSafeAltitude + 0.05f;
+            return new Vector3(
+                checkpointHorizontalTolerance * 2f,
+                Mathf.Max(0.1f, top - bottom),
+                checkpointHorizontalTolerance * 2f);
         }
 
         private void BuildCourseTriggers()
@@ -821,13 +862,15 @@ namespace DroneMicroClass
             markerBaseScales.Clear();
             markerLights.Clear();
             guideMaterial = CreateGuideMaterial();
-            activeGuideLine = showGuidanceLights ? CreateGuideLine("Active Target Guide", guideLineWidth, 0.9f) : null;
+            activeGuideLine = showAircraftGroundProjection
+                ? CreateGuideLine("Aircraft Ground Projection", guideLineWidth, 0.9f)
+                : null;
 
             Vector3 entryPosition = GetCourseEntryPosition();
             courseEntryTrigger = CreateTrigger(
                 "Course_Entry",
-                entryPosition,
-                new Vector3(checkpointHorizontalTolerance * 2f, checkpointVerticalTolerance * 2f, checkpointHorizontalTolerance * 2f));
+                GetCheckpointTriggerCenter(entryPosition),
+                GetCheckpointTriggerSize(entryPosition));
             courseEntryTrigger.Configure(this, -1);
             Transform entryMarker = CreateCourseMarker("Course Entry Marker", entryPosition, new Color(0.15f, 0.95f, 1f, 0.72f));
             courseEntryMarkerRenderer = entryMarker.GetComponent<Renderer>();
@@ -841,11 +884,12 @@ namespace DroneMicroClass
 
                 ChallengeCheckpoint trigger = CreateTrigger(
                     "Checkpoint_" + (i + 1),
-                    checkpoints[i].position,
-                    new Vector3(checkpointHorizontalTolerance * 2f, checkpointVerticalTolerance * 2f, checkpointHorizontalTolerance * 2f));
+                    GetCheckpointTriggerCenter(checkpoints[i].position),
+                    GetCheckpointTriggerSize(checkpoints[i].position));
                 trigger.Configure(this, checkpointTriggers.Count);
                 checkpointTriggers.Add(trigger);
                 Renderer markerRenderer = checkpoints[i].GetComponentInChildren<Renderer>();
+                SetMarkerVisible(checkpoints[i], showCheckpointMarkers);
                 markerRenderers.Add(markerRenderer);
                 markerBaseScales.Add(checkpoints[i].localScale);
                 markerLights.Add(showGuidanceLights && showGuideLightObjects ? CreateGuideLight("Checkpoint_" + (i + 1) + "_Light", checkpoints[i], new Color(0.15f, 0.95f, 1f, 1f)) : null);
@@ -877,6 +921,7 @@ namespace DroneMicroClass
             }
 
             finishMarkerRenderer = finishMarker.GetComponent<Renderer>();
+            SetMarkerVisible(finishMarker.transform, showCheckpointMarkers);
             finishMarkerBaseScale = finishMarker.transform.localScale;
             if (finishMarkerRenderer != null)
             {
@@ -999,8 +1044,23 @@ namespace DroneMicroClass
             {
                 renderer.sharedMaterial = CreateMarkerMaterial(color);
             }
+            SetMarkerVisible(marker.transform, showCheckpointMarkers);
 
             return marker.transform;
+        }
+
+        private static void SetMarkerVisible(Transform marker, bool visible)
+        {
+            if (marker == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = marker.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                renderers[i].enabled = visible;
+            }
         }
 
         private ChallengeCheckpoint CreateTrigger(string objectName, Vector3 position, Vector3 size)
@@ -1168,6 +1228,7 @@ namespace DroneMicroClass
             briefingSubtitleText.text = RouteSubtitle;
 
             briefingBodyText = CreateText(panel.transform, "Briefing Body", new Vector2(90f, -142f), new Vector2(1220f, 650f), 21, FontStyle.Normal, TextAnchor.UpperLeft);
+            briefingRouteDiagram = CreateRouteDiagram(panel.transform);
             briefingControlsDiagram = CreateControlsDiagram(panel.transform);
             briefingControlsDiagram.SetActive(false);
             briefingPageText = CreateText(panel.transform, "Briefing Page", new Vector2(0f, -850f), new Vector2(220f, 32f), 18, FontStyle.Normal, TextAnchor.UpperCenter);
@@ -1195,6 +1256,11 @@ namespace DroneMicroClass
             {
                 briefingControlsDiagram.SetActive(showControlsDiagram);
             }
+            if (briefingRouteDiagram != null)
+            {
+                briefingRouteDiagram.SetActive(briefingPageIndex == 0);
+            }
+
 
             RectTransform bodyRect = briefingBodyText.rectTransform;
             if (showControlsDiagram)
@@ -1206,7 +1272,7 @@ namespace DroneMicroClass
             else
             {
                 bodyRect.anchoredPosition = new Vector2(90f, -142f);
-                bodyRect.sizeDelta = new Vector2(1220f, 650f);
+                bodyRect.sizeDelta = new Vector2(1220f, briefingPageIndex == 0 ? 190f : 650f);
                 briefingBodyText.fontSize = 21;
             }
 
@@ -1243,6 +1309,121 @@ namespace DroneMicroClass
             {
                 briefingNextButtonText.text = briefingPageIndex == BriefingPageCount - 1 ? "开始训练" : "下一步";
             }
+        }
+
+        private GameObject CreateRouteDiagram(Transform parent)
+        {
+            GameObject root = new GameObject("Training Route Diagram", typeof(RectTransform));
+            root.transform.SetParent(parent, false);
+            RectTransform rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = rect.anchorMin;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(0f, -105f);
+            rect.sizeDelta = new Vector2(860f, 370f);
+
+            Color routeColor = new Color(0.16f, 0.78f, 1f, 0.95f);
+            Color approachColor = new Color(0.40f, 1f, 0.66f, 1f);
+            Vector2 start = new Vector2(0f, -165f);
+            Vector2 finish;
+
+            if (routeLayout == RouteLayout.Rectangle)
+            {
+                Vector2[] route =
+                {
+                    new Vector2(0f, -105f),
+                    new Vector2(280f, -105f),
+                    new Vector2(280f, 145f),
+                    new Vector2(-280f, 145f),
+                    new Vector2(-280f, -105f),
+                    new Vector2(0f, -105f)
+                };
+                finish = route[0];
+                for (int i = 0; i < route.Length - 1; i++)
+                {
+                    DrawRouteLine(root.transform, "Rectangle Route", route[i], route[i + 1], 5f, routeColor);
+                    DrawRouteArrow(root.transform, "Rectangle Direction",
+                        Vector2.Lerp(route[i], route[i + 1], 0.42f),
+                        Vector2.Lerp(route[i], route[i + 1], 0.58f), routeColor);
+                }
+            }
+            else
+            {
+                finish = new Vector2(0f, 20f);
+                DrawRouteLoop(root.transform, "Right Loop", new Vector2(120f, 20f), 120f, 180f, -180f, routeColor);
+                DrawRouteLoop(root.transform, "Left Loop", new Vector2(-120f, 20f), 120f, 0f, 360f, routeColor);
+            }
+
+            DrawRouteLine(root.transform, "Takeoff Approach", start, finish, 4f, approachColor);
+            DrawRouteArrow(root.transform, "Takeoff Direction",
+                Vector2.Lerp(start, finish, 0.38f),
+                Vector2.Lerp(start, finish, 0.53f), approachColor);
+            DrawRouteMarker(root.transform, "Takeoff Point", start, approachColor);
+            DrawRouteMarker(root.transform, "Finish Point", finish, new Color(1f, 0.76f, 0.22f, 1f));
+            CreateRouteLabel(root.transform, "起飞点", new Vector2(85f, -165f), new Vector2(100f, 30f), approachColor);
+            CreateRouteLabel(root.transform, "终点", finish + new Vector2(75f, 0f), new Vector2(100f, 30f), new Color(1f, 0.83f, 0.43f, 1f));
+            DrawRouteLine(root.transform, "Route Legend", new Vector2(-365f, -165f), new Vector2(-320f, -165f), 4f, routeColor);
+            CreateRouteLabel(root.transform, "航迹轨道", new Vector2(-250f, -165f), new Vector2(130f, 30f), routeColor);
+            return root;
+        }
+
+        private static void DrawRouteLoop(Transform parent, string name, Vector2 center,
+            float radius, float startDegrees, float endDegrees, Color color)
+        {
+            const int segments = 48;
+            Vector2 previous = center + new Vector2(
+                Mathf.Cos(startDegrees * Mathf.Deg2Rad),
+                Mathf.Sin(startDegrees * Mathf.Deg2Rad)) * radius;
+            for (int i = 1; i <= segments; i++)
+            {
+                float angle = Mathf.Lerp(startDegrees, endDegrees, i / (float)segments) * Mathf.Deg2Rad;
+                Vector2 point = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                DrawRouteLine(parent, name, previous, point, 5f, color);
+                if (i == 12 || i == 36)
+                {
+                    DrawRouteArrow(parent, name + " Direction", previous, point, color);
+                }
+                previous = point;
+            }
+        }
+
+        private static void DrawRouteMarker(Transform parent, string name, Vector2 position, Color color)
+        {
+            GameObject marker = CreatePanel(parent, name, position, new Vector2(15f, 15f), color);
+            marker.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0f, 0f, 45f);
+            marker.GetComponent<Image>().raycastTarget = false;
+        }
+
+        private static void DrawRouteArrow(Transform parent, string name, Vector2 from, Vector2 to, Color color)
+        {
+            Vector2 direction = (to - from).normalized;
+            Vector2 side = new Vector2(-direction.y, direction.x) * 8f;
+            Vector2 basePoint = to - direction * 15f;
+            DrawRouteLine(parent, name + " Left", basePoint + side, to, 4f, color);
+            DrawRouteLine(parent, name + " Right", basePoint - side, to, 4f, color);
+        }
+
+        private static void DrawRouteLine(Transform parent, string name, Vector2 from, Vector2 to, float width, Color color)
+        {
+            Vector2 delta = to - from;
+            GameObject line = CreatePanel(parent, name, (from + to) * 0.5f,
+                new Vector2(delta.magnitude, width), color);
+            line.GetComponent<RectTransform>().localRotation =
+                Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
+            line.GetComponent<Image>().raycastTarget = false;
+        }
+
+        private static void CreateRouteLabel(Transform parent, string label, Vector2 position, Vector2 size, Color color)
+        {
+            Text text = CreateText(parent, label, Vector2.zero, size, 20, FontStyle.Bold, TextAnchor.MiddleCenter);
+            RectTransform rect = text.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = rect.anchorMin;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            text.text = label;
+            text.color = color;
+            text.raycastTarget = false;
         }
 
         private static GameObject CreateControlsDiagram(Transform parent)
@@ -1477,7 +1658,7 @@ namespace DroneMicroClass
             {
                 detailText.text =
                     "状态：训练说明\n" +
-                    $"检查点：0 / {RequiredCheckpointCount}\n" +
+                    $"航线进度：0 / {RequiredCheckpointCount}\n" +
                     "计时：00:00\n" +
                     "分数：100\n" +
                     "请完成三页说明后开始训练。";
@@ -1489,7 +1670,7 @@ namespace DroneMicroClass
                 detailText.text =
                     "状态：等待起飞\n" +
                     $"当前目标：{RouteEntryLabel}\n" +
-                    $"检查点：0 / {RequiredCheckpointCount}\n" +
+                    $"航线进度：0 / {RequiredCheckpointCount}\n" +
                     "计时：00:00\n" +
                     "分数：100\n" +
                     "长按 S + D + ↓ + ← 解锁起飞，离地后开始计时。";
@@ -1499,7 +1680,7 @@ namespace DroneMicroClass
             detailText.text =
                 $"状态：{GetStateLabel()}\n" +
                 $"当前目标：{GetTargetLabel()}\n" +
-                $"检查点：{Mathf.Min(expectedCheckpoint, RequiredCheckpointCount)} / {RequiredCheckpointCount}\n" +
+                $"航线进度：{Mathf.Min(expectedCheckpoint, RequiredCheckpointCount)} / {RequiredCheckpointCount}\n" +
                 $"计时：{FormatTime(ElapsedSeconds)} / 目标 {FormatTime(targetTimeSeconds)}\n" +
                 $"分数：{score.FinalScore}  扣分：{score.TotalPenalty}\n" +
                 $"碰撞：{collisions}  偏离航道：{outOfCourseEvents}  高度警告：{unsafeAltitudeTicks}\n" +
@@ -1512,8 +1693,19 @@ namespace DroneMicroClass
             }
             else if (feedbackText != null && Time.time > feedbackUntilTime && state == ChallengeState.Running)
             {
-                feedbackText.color = Color.white;
-                feedbackText.text = "飞往蓝色检查点";
+                float altitudeAboveCourse = drone != null
+                    ? drone.transform.position.y - courseCenter.y
+                    : 0f;
+                if (altitudeAboveCourse > maxSafeAltitude)
+                {
+                    feedbackText.color = new Color(1f, 0.72f, 0.15f, 1f);
+                    feedbackText.text = $"高度超过 {maxSafeAltitude:0.#} 米，请下降。";
+                }
+                else
+                {
+                    feedbackText.color = Color.white;
+                    feedbackText.text = "请沿航线继续飞行";
+                }
             }
         }
 
@@ -1553,7 +1745,7 @@ namespace DroneMicroClass
 
             if (expectedCheckpoint < RequiredCheckpointCount)
             {
-                return "检查点 " + (expectedCheckpoint + 1);
+                return "沿航线飞行";
             }
 
             return "任务完成";
@@ -1652,7 +1844,7 @@ namespace DroneMicroClass
 
         private void UpdateActiveGuideLine()
         {
-            if (activeGuideLine == null || !showGuidanceLights || drone == null || state != ChallengeState.Running)
+            if (activeGuideLine == null || !showAircraftGroundProjection || drone == null || state != ChallengeState.Running)
             {
                 if (activeGuideLine != null)
                 {
@@ -1662,48 +1854,69 @@ namespace DroneMicroClass
                 return;
             }
 
-            if (!TryGetActiveTargetPosition(out Vector3 targetPosition))
+            if (!TryGetAircraftGroundProjection(out Vector3 groundPosition))
             {
                 activeGuideLine.enabled = false;
                 return;
             }
 
-            Vector3 dronePosition = drone.transform.position + Vector3.up * 0.22f;
+            Vector3 dronePosition = drone.transform.position;
+            if (dronePosition.y <= groundPosition.y + 0.08f)
+            {
+                activeGuideLine.enabled = false;
+                return;
+            }
+
             float pulse = 0.7f + Mathf.Sin(Time.time * 7.5f) * 0.18f;
-            Color color = expectedCheckpoint < RequiredCheckpointCount
-                ? new Color(0.15f, 0.95f, 1f, pulse)
-                : new Color(1f, 0.2f, 1f, pulse);
+            Color color = new Color(0.15f, 0.95f, 1f, pulse);
 
             activeGuideLine.enabled = true;
             activeGuideLine.positionCount = 2;
             activeGuideLine.SetPosition(0, dronePosition);
-            activeGuideLine.SetPosition(1, targetPosition);
+            activeGuideLine.SetPosition(1, groundPosition);
             activeGuideLine.widthMultiplier = guideLineWidth * (1f + Mathf.Sin(Time.time * 6f) * 0.14f);
             SetLineColor(activeGuideLine, color);
         }
 
-        private bool TryGetActiveTargetPosition(out Vector3 targetPosition)
+        private bool TryGetAircraftGroundProjection(out Vector3 groundPosition)
         {
-            if (!courseEntryReached && courseEntryMarkerRenderer != null)
+            Vector3 origin = drone.transform.position + Vector3.up * 0.5f;
+            int hitCount = Physics.RaycastNonAlloc(
+                origin,
+                Vector3.down,
+                groundProjectionHits,
+                2000f,
+                groundProjectionLayers,
+                QueryTriggerInteraction.Ignore);
+            float nearestDistance = float.PositiveInfinity;
+            groundPosition = Vector3.zero;
+            bool found = false;
+            for (int i = 0; i < hitCount; i++)
             {
-                targetPosition = courseEntryMarkerRenderer.transform.position;
+                RaycastHit hit = groundProjectionHits[i];
+                if (hit.transform == null
+                    || hit.transform.IsChildOf(drone.transform)
+                    || hit.normal.y < 0.35f
+                    || hit.distance >= nearestDistance)
+                {
+                    continue;
+                }
+
+                nearestDistance = hit.distance;
+                groundPosition = hit.point + Vector3.up * groundProjectionOffset;
+                found = true;
+            }
+
+            if (found)
+            {
                 return true;
             }
 
-            if (expectedCheckpoint < markerRenderers.Count && markerRenderers[expectedCheckpoint] != null)
-            {
-                targetPosition = markerRenderers[expectedCheckpoint].transform.position;
-                return true;
-            }
-
-            if (expectedCheckpoint >= RequiredCheckpointCount && finishMarkerRenderer != null)
-            {
-                targetPosition = finishMarkerRenderer.transform.position;
-                return true;
-            }
-
-            targetPosition = Vector3.zero;
-            return false;
+            groundPosition = new Vector3(
+                drone.transform.position.x,
+                courseCenter.y + groundProjectionOffset,
+                drone.transform.position.z);
+            return true;
         }
 
         private static void SetLineColor(LineRenderer line, Color color)
@@ -1724,6 +1937,7 @@ namespace DroneMicroClass
             public int CollisionPenalty;
             public int UnsafeAltitudePenalty;
             public int OutOfCoursePenalty;
+            public int TrajectoryPenalty;
             public int OtherPenalty;
             public int IncompleteCheckpointPenalty;
             public int IncompleteCheckpoints;

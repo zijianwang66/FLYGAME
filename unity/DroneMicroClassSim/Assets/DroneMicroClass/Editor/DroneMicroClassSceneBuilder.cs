@@ -188,7 +188,7 @@ namespace DroneMicroClass.Editor
             camera.fieldOfView = 58f;
             ConfigureUrpPostProcessing(camera);
             var cameraRig = cameraObject.AddComponent<DroneCameraRig>();
-            cameraRig.Configure(drone.transform, fleet, DroneCameraRig.CameraMode.Chase, true);
+            cameraRig.Configure(drone.transform, fleet, DroneCameraRig.CameraMode.GroundObserver, true);
 
             RenderTexture noseTexture = CreateOrUpdateNoseRenderTexture();
             GameObject noseCameraObject = new GameObject("Nose Feed Camera");

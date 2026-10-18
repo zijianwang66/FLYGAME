@@ -1845,6 +1845,15 @@ MonoBehaviour:
   noseHorizonSharpness: 24
   nextCameraKey: 99
   previousCameraKey: 118
+  defaultToGroundObserver: 1
+  allowViewSwitchingInRelease: 0
+  observerEyeHeight: 2.2
+  observerDistanceBehindLaunch: 8
+  observerZoomStartDistance: 18
+  observerMaximumZoom: 8
+  observerZoomSmoothTime: 0.45
+  observerRotationSharpness: 12
+  groundObserverKey: 103
 --- !u!20 &150504647
 Camera:
   m_ObjectHideFlags: 0
@@ -11073,6 +11082,15 @@ MonoBehaviour:
   noseHorizonSharpness: 24
   nextCameraKey: 99
   previousCameraKey: 118
+  defaultToGroundObserver: 1
+  allowViewSwitchingInRelease: 0
+  observerEyeHeight: 2.2
+  observerDistanceBehindLaunch: 8
+  observerZoomStartDistance: 18
+  observerMaximumZoom: 8
+  observerZoomSmoothTime: 0.45
+  observerRotationSharpness: 12
+  groundObserverKey: 103
 --- !u!81 &1080860560
 AudioListener:
   m_ObjectHideFlags: 0

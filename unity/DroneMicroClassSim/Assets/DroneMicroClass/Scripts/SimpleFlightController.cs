@@ -18,6 +18,11 @@ namespace DroneMicroClass
         [SerializeField, Range(0.1f, 1f)] private float takeoffLiftStartRotorSpin = 0.58f;
         [SerializeField, Min(0.1f)] private float takeoffFullRotorHeight = 0.75f;
 
+        [Header("Ground Placement")]
+        [SerializeField] private bool snapInitialPositionToGround = true;
+        [SerializeField, Min(0f)] private float initialGroundClearance = 0.01f;
+        [SerializeField, Min(0.1f)] private float maxInitialGroundSnapDistance = 2f;
+
         [Header("GPS Position Hold")]
         [SerializeField] private bool gpsPositionHoldEnabled = true;
         [SerializeField, Min(0f)] private float gpsPositionGain = 1.4f;
@@ -93,9 +98,15 @@ namespace DroneMicroClass
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
+            SnapInitialPositionToGround();
             if (GetComponent<DroneWindReceiver>() == null)
             {
                 gameObject.AddComponent<DroneWindReceiver>();
+            }
+
+            if (GetComponent<DroneFlightAudio>() == null)
+            {
+                gameObject.AddComponent<DroneFlightAudio>();
             }
 
             startPosition = transform.position;
@@ -105,6 +116,76 @@ namespace DroneMicroClass
             EnsurePidControllers();
             ApplyProfileToBody();
             ResetControlState();
+        }
+
+        private void SnapInitialPositionToGround()
+        {
+            if (!snapInitialPositionToGround)
+            {
+                return;
+            }
+
+            Collider[] ownColliders = GetComponentsInChildren<Collider>(true);
+            float lowestColliderY = float.PositiveInfinity;
+            for (int i = 0; i < ownColliders.Length; i++)
+            {
+                Collider collider = ownColliders[i];
+                if (collider != null
+                    && collider.enabled
+                    && !collider.isTrigger
+                    && collider.gameObject.activeInHierarchy)
+                {
+                    lowestColliderY = Mathf.Min(lowestColliderY, collider.bounds.min.y);
+                }
+            }
+
+            if (float.IsPositiveInfinity(lowestColliderY))
+            {
+                return;
+            }
+
+            float castHeight = maxInitialGroundSnapDistance + 1f;
+            Vector3 origin = transform.position + Vector3.up * castHeight;
+            RaycastHit[] hits = new RaycastHit[32];
+            int hitCount = Physics.RaycastNonAlloc(
+                origin,
+                Vector3.down,
+                hits,
+                castHeight + maxInitialGroundSnapDistance + 1f,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+            float nearestDistance = float.PositiveInfinity;
+            float groundY = 0f;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = hits[i];
+                if (hit.collider == null
+                    || hit.collider.transform.IsChildOf(transform)
+                    || hit.normal.y < 0.35f
+                    || hit.distance >= nearestDistance)
+                {
+                    continue;
+                }
+
+                nearestDistance = hit.distance;
+                groundY = hit.point.y;
+            }
+
+            if (float.IsPositiveInfinity(nearestDistance))
+            {
+                return;
+            }
+
+            float verticalAdjustment = groundY + initialGroundClearance - lowestColliderY;
+            if (Mathf.Abs(verticalAdjustment) > maxInitialGroundSnapDistance)
+            {
+                return;
+            }
+
+            Vector3 groundedPosition = transform.position + Vector3.up * verticalAdjustment;
+            transform.position = groundedPosition;
+            body.position = groundedPosition;
+            Physics.SyncTransforms();
         }
 
         private void OnValidate()
