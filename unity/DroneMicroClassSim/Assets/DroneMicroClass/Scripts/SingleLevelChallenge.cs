@@ -82,6 +82,7 @@ namespace DroneMicroClass
         private ChallengeCheckpoint courseEntryTrigger;
         private Renderer courseEntryMarkerRenderer;
         private bool courseEntryReached;
+        private bool courseBoundaryArmed;
         private ChallengeCheckpoint finishTrigger;
         private Renderer finishMarkerRenderer;
         private Vector3 finishMarkerBaseScale = Vector3.one;
@@ -262,6 +263,20 @@ namespace DroneMicroClass
             Vector3 checkpointPosition = checkpointTriggers[expectedCheckpoint].transform.position;
             Vector3 offset = position - checkpointPosition;
             float horizontalDistance = new Vector2(offset.x, offset.z).magnitude;
+            bool isFinishCheckpoint = finishWhenFinalCheckpointCleared
+                && expectedCheckpoint == RequiredCheckpointCount - 1;
+            if (isFinishCheckpoint
+                && horizontalDistance <= checkpointHorizontalTolerance
+                && position.y - courseCenter.y <= maxSafeAltitude)
+            {
+                checkpointPassActive = false;
+                checkpointPassMinimumDistance = float.PositiveInfinity;
+                expectedCheckpoint++;
+                previousDronePosition = position;
+                SetFeedback("已进入终点区域，训练完成。", 3f);
+                FinishChallenge();
+                return;
+            }
             if (position.y - courseCenter.y > maxSafeAltitude)
             {
                 checkpointPassActive = false;
@@ -334,6 +349,7 @@ namespace DroneMicroClass
             finishTime = 0f;
             expectedCheckpoint = 0;
             courseEntryReached = false;
+            courseBoundaryArmed = false;
             checkpointPassActive = false;
             checkpointPassMinimumDistance = float.PositiveInfinity;
             trajectoryPenaltyPoints = 0;
@@ -393,6 +409,7 @@ namespace DroneMicroClass
             finishTime = 0f;
             expectedCheckpoint = 0;
             courseEntryReached = false;
+            courseBoundaryArmed = false;
             checkpointPassActive = false;
             checkpointPassMinimumDistance = float.PositiveInfinity;
             trajectoryPenaltyPoints = 0;
@@ -484,6 +501,14 @@ namespace DroneMicroClass
         {
             float now = Time.time;
             float overflowDistance = GetCourseOverflowDistance(drone.transform.position);
+            if (!courseBoundaryArmed)
+            {
+                courseBoundaryArmed = courseEntryReached && overflowDistance <= 0f;
+                isOutOfCourse = false;
+                outOfCourseStartedAt = 0f;
+                lastCourseBoundaryUpdateTime = now;
+                return;
+            }
             if (overflowDistance <= 0f)
             {
                 if (isOutOfCourse)
